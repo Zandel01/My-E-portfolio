@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import LZString from 'lz-string';
 import { 
   Menu, X, Pencil, Save, RotateCcw, ChevronRight, 
   Type, Image as ImageIcon, Video, Trash2, 
   AlignLeft, AlignCenter, AlignRight, Eye, EyeOff, Plus,
-  GripVertical, Upload, Book, Star, GraduationCap, Lock, Unlock
+  GripVertical, Upload, Book, Star, GraduationCap, Lock, Unlock, Share2, Copy, Check
 } from 'lucide-react';
 import { 
   DndContext, 
@@ -1055,6 +1056,9 @@ export default function App() {
   const [passwordInput, setPasswordInput] = useState('');
   const [isPagesMenuOpen, setIsPagesMenuOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isSharing, setIsSharing] = useState(false);
+  const [hasCopied, setHasCopied] = useState(false);
+  const [shareUrl, setShareUrl] = useState('');
   const [activeId, setActiveId] = useState<string | null>(null);
 
   const sensors = useSensors(
@@ -1069,6 +1073,46 @@ export default function App() {
   );
 
   useEffect(() => {
+    // Check for shared data in URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const sharedData = urlParams.get('data');
+
+    if (sharedData) {
+      try {
+        const decompressed = LZString.decompressFromEncodedURIComponent(sharedData);
+        if (decompressed) {
+          const parsed = JSON.parse(decompressed);
+          
+          if (parsed.titlePage) {
+            setTitlePageData(parsed.titlePage);
+            setEditingData(parsed.titlePage);
+          }
+          if (parsed.coverPage) {
+            setCoverPageData(parsed.coverPage);
+            setEditingCoverData(parsed.coverPage);
+          }
+          if (parsed.academicCover) {
+            setAcademicCoverData(parsed.academicCover);
+            setEditingAcademicCoverData(parsed.academicCover);
+          }
+          if (parsed.acknowledgement) {
+            setAcknowledgement(parsed.acknowledgement);
+            setEditingAcknowledgement(parsed.acknowledgement);
+          }
+          if (parsed.dedication) {
+            setDedication(parsed.dedication);
+            setEditingDedication(parsed.dedication);
+          }
+          
+          // Clear URL parameter so refreshing doesn't keep loading old shared data if they edit later
+          // window.history.replaceState({}, document.title, window.location.pathname);
+          return; // Skip loading from localStorage if we have shared data
+        }
+      } catch (e) {
+        console.error('Failed to parse shared data from URL', e);
+      }
+    }
+
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
       try {
@@ -1224,6 +1268,44 @@ export default function App() {
     setEditingCoverData(coverPageData);
     setIsEditing(false);
     setHasUnlocked(false);
+  };
+
+  const generateShareLink = () => {
+    const allData = {
+      titlePage: titlePageData,
+      coverPage: coverPageData,
+      academicCover: academicCoverData,
+      acknowledgement: acknowledgement,
+      dedication: dedication
+    };
+
+    const compressed = LZString.compressToEncodedURIComponent(JSON.stringify(allData));
+    const url = `${window.location.origin}${window.location.pathname}?data=${compressed}`;
+    setShareUrl(url);
+    setIsSharing(true);
+  };
+
+  const copyToClipboard = async () => {
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setHasCopied(true);
+      setTimeout(() => setHasCopied(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy!', err);
+      // Fallback for older browsers or if navigator.clipboard is blocked
+      const textArea = document.createElement("textarea");
+      textArea.value = shareUrl;
+      document.body.appendChild(textArea);
+      textArea.select();
+      try {
+        document.execCommand('copy');
+        setHasCopied(true);
+        setTimeout(() => setHasCopied(false), 2000);
+      } catch (err) {
+        alert("Failed to copy link. Please manually copy it: " + shareUrl);
+      }
+      document.body.removeChild(textArea);
+    }
   };
 
   const addBlock = (type: 'text' | 'image' | 'video') => {
@@ -1506,6 +1588,14 @@ export default function App() {
                         </button>
 
                         <div className="w-[1px] h-8 bg-gray-100 mx-0.5 sm:mx-1" />
+
+                        <button 
+                          onClick={generateShareLink}
+                          className="p-2 sm:p-4 rounded-xl sm:rounded-[1.5rem] bg-gray-50 text-neutral-600 hover:bg-neutral-100 transition-all active:scale-95"
+                          title="Share Portfolio Link"
+                        >
+                          <Share2 size={20} className="sm:w-6 sm:h-6" />
+                        </button>
 
                         <button 
                           onClick={() => {
@@ -1863,6 +1953,15 @@ export default function App() {
               </div>
 
               <div className="flex items-center gap-1 sm:gap-4">
+                <button 
+                  onClick={generateShareLink}
+                  className="p-2 sm:p-4 rounded-xl sm:rounded-2xl bg-gray-50 text-neutral-600 hover:bg-neutral-100 transition-all active:scale-95 flex items-center justify-center sm:gap-2"
+                  title="Share Site Link"
+                >
+                  <Share2 size={16} className="sm:w-5 sm:h-5" />
+                  <span className="hidden sm:inline text-[10px] font-black uppercase tracking-widest">Share</span>
+                </button>
+
                 {isEditing && (
                   <div className="relative mr-1 sm:mr-2">
                     <button
@@ -2282,6 +2381,81 @@ export default function App() {
       )}
     </DndContext>
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Share Modal */}
+      <AnimatePresence>
+        {isSharing && (
+          <div className="fixed inset-0 z-[6000] flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsSharing(false)}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="relative w-full max-w-xl bg-white rounded-[2.5rem] shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)] overflow-hidden border border-gray-100"
+            >
+              <div className="p-8 sm:p-12 space-y-8">
+                <div className="flex justify-between items-start">
+                  <div className="space-y-1">
+                    <h3 className="text-3xl font-black uppercase tracking-tight">Share Site</h3>
+                    <p className="text-sm font-medium text-gray-500 uppercase tracking-widest">Anyone with this link can view your site</p>
+                  </div>
+                  <button 
+                    onClick={() => setIsSharing(false)}
+                    className="p-3 hover:bg-gray-50 rounded-2xl transition-all"
+                  >
+                    <X size={24} />
+                  </button>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="p-6 bg-gray-50 rounded-[1.5rem] border border-gray-100 overflow-hidden relative group">
+                    <p className="text-neutral-400 text-xs font-mono break-all line-clamp-2 pr-12">
+                      {shareUrl}
+                    </p>
+                    <button 
+                      onClick={copyToClipboard}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 p-3 bg-white shadow-xl rounded-xl hover:bg-black hover:text-white transition-all active:scale-95"
+                    >
+                      {hasCopied ? <Check size={18} className="text-green-500" /> : <Copy size={18} />}
+                    </button>
+                  </div>
+                  {hasCopied && (
+                    <motion.p 
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="text-center text-[10px] font-black uppercase tracking-widest text-green-500"
+                    >
+                      Copied to clipboard!
+                    </motion.p>
+                  )}
+                </div>
+
+                <div className="pt-4">
+                  <button 
+                    onClick={copyToClipboard}
+                    className="w-full py-5 bg-black text-white rounded-[1.5rem] font-black uppercase tracking-[0.2em] shadow-2xl hover:bg-neutral-800 transition-all flex items-center justify-center gap-3"
+                  >
+                    {hasCopied ? 'Link Copied!' : 'Copy Link'}
+                    <Copy size={20} />
+                  </button>
+                </div>
+              </div>
+
+              <div className="bg-neutral-50 px-8 py-6 border-t border-gray-100">
+                <p className="text-center text-[9px] font-black uppercase tracking-widest text-gray-400">
+                  Tip: Changes you make and save will update this link's content for everyone.
+                </p>
+              </div>
+            </motion.div>
+          </div>
         )}
       </AnimatePresence>
     </div>
