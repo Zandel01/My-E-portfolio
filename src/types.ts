@@ -26,8 +26,11 @@ export interface PillarCard {
 
 export interface CoverPageSectionData {
   label: string;
+  showLabel?: boolean;
   heading: string;
+  showHeading?: boolean;
   paragraph1: string;
+  showParagraph1?: boolean;
   paragraph2: string;
   pillars: [PillarCard, PillarCard, PillarCard, PillarCard];
   blocks: ContentBlock[];
@@ -61,6 +64,9 @@ export interface CoverPageData {
 }
 
 export interface TitlePageData {
+  headerImage: string;
+  showHeaderImage: boolean;
+  headerImageWidth: number;
   title: string;
   showTitle: boolean;
   subtitle: string;
@@ -75,8 +81,11 @@ export interface TitlePageData {
   showProfessorName: boolean;
   academicYear: string;
   showAcademicYear: boolean;
+  submittedByLabel: string;
   showSubmittedByLabel: boolean;
+  submittedToLabel: string;
   showSubmittedToLabel: boolean;
+  academicYearLabel: string;
   blocks: ContentBlock[];
   layoutOrder: string[]; // Track order of all pieces: title, subtitle, desc, student, professor, ay, and all custom block IDs
   alignment?: 'left' | 'center' | 'right';
@@ -85,6 +94,15 @@ export interface TitlePageData {
 export interface Section {
   id: SectionId;
   label: string;
+}
+
+export interface AppSettings {
+  bgColor: string;
+  bgImage: string;
+  bgType: 'color' | 'image';
+  fontFamily: string;
+  textColor: string;
+  bgOpacity: number;
 }
 
 export const SECTIONS: Section[] = [

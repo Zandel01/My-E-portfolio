@@ -4,8 +4,8 @@ import LZString from 'lz-string';
 import { 
   Menu, X, Pencil, Save, RotateCcw, ChevronRight, 
   Type, Image as ImageIcon, Video, Trash2, 
-  AlignLeft, AlignCenter, AlignRight, Eye, EyeOff, Plus,
-  GripVertical, Upload, Book, Star, GraduationCap, Lock, Unlock, Share2, Copy, Check
+  AlignLeft, AlignCenter, AlignRight, Eye, EyeOff, Plus, RotateCw,
+  GripVertical, Upload, Book, Star, GraduationCap, Lock, Unlock, Share2, Copy, Check, Palette
 } from 'lucide-react';
 import { 
   DndContext, 
@@ -26,16 +26,29 @@ import {
   useSortable
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { SectionId, TitlePageData, CoverPageData, CoverPageSectionData, SECTIONS, ContentBlock, BasicSectionData } from './types';
+import { SectionId, TitlePageData, CoverPageData, CoverPageSectionData, SECTIONS, ContentBlock, BasicSectionData, AppSettings } from './types';
 
 const STORAGE_KEY = 'portfolio_title_page_data_v3';
 const COVER_STORAGE_KEY = 'portfolio_cover_page_data_v1';
+const SETTINGS_STORAGE_KEY = 'portfolio_app_settings_v1';
 const NEW_COVER_SECTION_KEY = 'coverPageData';
+
+const DEFAULT_SETTINGS: AppSettings = {
+  bgColor: '#ffffff',
+  bgImage: '',
+  bgType: 'color',
+  fontFamily: 'Inter',
+  textColor: '#000000',
+  bgOpacity: 100
+};
 
 const DEFAULT_ACADEMIC_COVER: CoverPageSectionData = {
   label: 'COVER PAGE',
+  showLabel: true,
   heading: 'A Journey in Teaching & Technology',
+  showHeading: true,
   paragraph1: 'Teaching in the 21st century requires a delicate balance of traditional pedagogies and modern technological tools. As I embarked on this journey through TLE 10, I discovered that true mastery comes not just from knowing the content, but from understanding how to communicate it effectively to diverse learners. This e-portfolio serves as a digital chronicle of my growth, aspirations, and the creative projects that have shaped my path as a future educator in human-centric technology.',
+  showParagraph1: true,
   paragraph2: 'The course Technology for Teaching and Learning 2 (TTL 2) presented significant challenges that pushed me beyond my comfort zone. From designing interactive modules to integrating complex multimedia artifacts, each hurdle became a stepping stone. These experiences have instilled in me a deeper appreciation for the transformative power of educational technology when applied with purpose and empathy.',
   pillars: [
     { title: 'Reflection', description: 'Thinking deeply about my teaching and learning experiences' },
@@ -44,7 +57,7 @@ const DEFAULT_ACADEMIC_COVER: CoverPageSectionData = {
     { title: 'Service', description: 'Contributing to the community and learners' }
   ],
   blocks: [],
-  layoutOrder: ['sys-label', 'sys-heading', 'sys-divider', 'sys-p1', 'sys-p2', 'sys-pillars'],
+  layoutOrder: ['sys-label', 'sys-divider', 'sys-heading', 'sys-p1', 'sys-p2', 'sys-pillars'],
   alignment: 'center'
 };
 
@@ -74,6 +87,9 @@ const DEFAULT_COVER_DATA: CoverPageData = {
 };
 
 const DEFAULT_TITLE_DATA: TitlePageData = {
+  headerImage: '', // User will upload this
+  showHeaderImage: true,
+  headerImageWidth: 600,
   title: 'E-Portfolio',
   showTitle: true,
   subtitle: 'in TLE 10',
@@ -88,10 +104,13 @@ const DEFAULT_TITLE_DATA: TitlePageData = {
   showProfessorName: true,
   academicYear: '2023-2024',
   showAcademicYear: true,
+  submittedByLabel: 'SUBMITTED BY',
   showSubmittedByLabel: true,
+  submittedToLabel: 'ACCLAIMED BY',
   showSubmittedToLabel: true,
+  academicYearLabel: 'CYCLES OF',
   blocks: [],
-  layoutOrder: ['sys-title', 'sys-subtitle', 'sys-desc', 'sys-divider', 'sys-student', 'sys-professor', 'sys-ay'],
+  layoutOrder: ['sys-header', 'sys-title', 'sys-divider', 'sys-subtitle', 'sys-desc', 'sys-student', 'sys-professor', 'sys-ay'],
   alignment: 'center'
 };
 
@@ -443,56 +462,56 @@ const AcademicCoverPage = ({
     }`}>
       {data.layoutOrder.map((itemId) => {
         // 1. System Items
-        if (itemId === 'sys-label') {
+        if (itemId === 'sys-label' && (isEditing || data.showLabel)) {
           return (
             <SortableItem key={itemId} id={itemId} editMode={isEditing}>
               <div className={`w-full relative group/sys ${data.alignment === 'left' ? 'text-left' : data.alignment === 'right' ? 'text-right' : 'text-center'}`}>
                 {isEditing ? (
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-4">
                     <input
-                      className={`w-full bg-transparent border-b border-neutral-200 outline-none text-xs font-black uppercase tracking-[0.4em] text-black focus:text-black transition-colors ${data.alignment === 'left' ? 'text-left' : data.alignment === 'right' ? 'text-right' : 'text-center'}`}
+                      className={`w-full bg-transparent border-b border-neutral-200 outline-none text-[clamp(1.5rem,7.5vw,5rem)] font-black font-display uppercase tracking-[-0.04em] leading-tight text-black focus:text-black transition-colors ${data.alignment === 'left' ? 'text-left' : data.alignment === 'right' ? 'text-right' : 'text-center'}`}
                       value={data.label}
                       onChange={(e) => onUpdate({ label: e.target.value })}
                     />
                     <button 
                       onClick={() => onRemoveBlock(itemId)}
-                      className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                      className="p-3 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
                     >
-                      <Trash2 size={14} />
+                      <Trash2 size={24} />
                     </button>
                   </div>
                 ) : (
-                  <span className="text-[10px] font-black uppercase tracking-[0.5em] text-black">
+                  <h1 className={`text-[clamp(1.5rem,7.5vw,5rem)] font-black font-display uppercase tracking-[-0.04em] leading-tight text-black w-full`}>
                     {data.label}
-                  </span>
+                  </h1>
                 )}
               </div>
             </SortableItem>
           );
         }
 
-        if (itemId === 'sys-heading') {
+        if (itemId === 'sys-heading' && (isEditing || data.showHeading)) {
           return (
             <SortableItem key={itemId} id={itemId} editMode={isEditing}>
                <div className={`w-full relative group/sys ${data.alignment === 'left' ? 'text-left' : data.alignment === 'right' ? 'text-right' : 'text-center'}`}>
                 {isEditing ? (
                   <div className="flex items-center gap-4">
                     <input
-                      className={`w-full bg-transparent border-b border-neutral-200 outline-none text-3xl sm:text-5xl font-display font-black uppercase focus:not-italic transition-all ${data.alignment === 'left' ? 'text-left' : data.alignment === 'right' ? 'text-right' : 'text-center'}`}
+                      className={`w-full bg-transparent border-b border-neutral-200 outline-none text-xl sm:text-2xl font-bold uppercase tracking-tight text-black/60 focus:text-black transition-all ${data.alignment === 'left' ? 'text-left' : data.alignment === 'right' ? 'text-right' : 'text-center'}`}
                       value={data.heading}
                       onChange={(e) => onUpdate({ heading: e.target.value })}
                     />
                     <button 
                       onClick={() => onRemoveBlock(itemId)}
-                      className="p-3 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
+                      className="p-2 text-red-100 hover:text-red-400 opacity-0 group-hover/sys:opacity-100 transition-all"
                     >
-                      <Trash2 size={20} />
+                      <Trash2 size={16} />
                     </button>
                   </div>
                 ) : (
-                  <h1 className={`text-[clamp(1.8rem,9vw,7rem)] font-display font-black uppercase text-black tracking-[-0.04em] w-full leading-tight ${data.alignment === 'left' ? 'text-left' : data.alignment === 'right' ? 'text-right' : 'text-center'}`}>
+                  <h2 className={`text-xl sm:text-3xl font-bold uppercase text-black/60 tracking-tight w-full leading-tight ${data.alignment === 'left' ? 'text-left' : data.alignment === 'right' ? 'text-right' : 'text-center'}`}>
                     {String(data.heading).includes('[object Object]') ? DEFAULT_ACADEMIC_COVER.heading : data.heading}
-                  </h1>
+                  </h2>
                 )}
               </div>
             </SortableItem>
@@ -502,16 +521,12 @@ const AcademicCoverPage = ({
         if (itemId === 'sys-divider') {
           return (
             <SortableItem key={itemId} id={itemId} editMode={isEditing}>
-              <div className="flex items-center gap-6 w-full max-w-lg mx-auto py-4 relative group/sys">
-                <div className="h-[1px] flex-1 bg-neutral-200" />
-                <div className="text-neutral-300">
-                  <GraduationCap size={24} strokeWidth={1.5} />
-                </div>
-                <div className="h-[1px] flex-1 bg-neutral-200" />
+              <div className="relative group/sys w-full flex flex-col items-center py-4 sm:py-8 transition-all">
+                <div className="w-16 sm:w-24 h-1.5 sm:h-2 bg-black rounded-full shadow-sm" />
                 {isEditing && (
                   <button 
                     onClick={() => onRemoveBlock(itemId)}
-                    className="absolute -right-12 p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                    className="absolute -right-12 top-1/2 -translate-y-1/2 p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
                   >
                     <Trash2 size={16} />
                   </button>
@@ -521,7 +536,7 @@ const AcademicCoverPage = ({
           );
         }
 
-        if (itemId === 'sys-p1') {
+        if (itemId === 'sys-p1' && (isEditing || data.showParagraph1)) {
           return (
             <SortableItem key={itemId} id={itemId} editMode={isEditing}>
               <div className="max-w-2xl mx-auto w-full relative group/sys z-10">
@@ -696,16 +711,18 @@ function SortableItem({ id, editMode, children }: SortableItemProps) {
       className={`group relative w-full flex flex-col items-center py-2 sm:py-4 ${editMode ? 'hover:bg-gray-50/50 rounded-2xl px-4 ring-1 ring-transparent hover:ring-gray-200 transition-all' : ''}`}
     >
       {editMode && (
-        <div className="absolute top-2 right-2 flex items-center gap-1 bg-white shadow-2xl border border-gray-100 rounded-xl p-1 opacity-0 group-hover:opacity-100 transition-opacity z-20">
-          <button 
-            {...attributes} 
-            {...listeners}
-            className="p-1.5 hover:bg-gray-100 rounded-lg cursor-grab active:cursor-grabbing text-gray-400 hover:text-black"
-            title="Drag to reorder"
-          >
-            <GripVertical size={18} />
-          </button>
-        </div>
+        <>
+          <div className="absolute top-2 left-2 sm:left-auto sm:right-12 flex items-center bg-white shadow-2xl border border-gray-100 rounded-xl p-1 opacity-0 group-hover:opacity-100 transition-opacity z-20">
+            <button 
+              {...attributes} 
+              {...listeners}
+              className="p-1.5 hover:bg-gray-100 rounded-lg cursor-grab active:cursor-grabbing text-gray-400 hover:text-black"
+              title="Drag to reorder"
+            >
+              <GripVertical size={18} />
+            </button>
+          </div>
+        </>
       )}
       {children}
     </div>
@@ -773,33 +790,34 @@ function SortableBlock({ block, editMode, onUpdate, onRemove }: SortableBlockPro
       className={`group relative w-full ${alignmentClasses} space-y-2 py-4 ${editMode ? 'hover:bg-gray-50/50 rounded-2xl px-4 ring-1 ring-transparent hover:ring-gray-200 transition-all' : ''}`}
     >
       {editMode && (
-        <div className="absolute -top-4 right-2 flex items-center gap-1 bg-white shadow-2xl border border-gray-100 rounded-xl p-1.5 opacity-0 group-hover:opacity-100 transition-opacity z-20">
+        <div className="absolute -top-6 left-2 right-2 sm:left-auto sm:right-2 flex items-center justify-between sm:justify-end gap-1 bg-white shadow-2xl border border-gray-100 rounded-xl p-1.5 opacity-0 group-hover:opacity-100 transition-opacity z-20">
           <button 
             {...attributes} 
             {...listeners}
-            className="p-1.5 hover:bg-gray-100 rounded-lg cursor-grab active:cursor-grabbing text-gray-400 hover:text-black"
+            className="p-2 hover:bg-gray-100 rounded-lg cursor-grab active:cursor-grabbing text-gray-400 hover:text-black order-first sm:order-none"
             title="Drag to reorder"
           >
-            <GripVertical size={18} />
+            <GripVertical size={20} />
           </button>
-          <div className="w-[1px] h-4 bg-gray-100 mx-1" />
-          <button 
-            onClick={() => {
-              const next: Record<string, 'left' | 'center' | 'right'> = { left: 'center', center: 'right', right: 'left' };
-              onUpdate(block.id, { alignment: next[block.alignment] });
-            }}
-            className="p-1 sm:p-1.5 hover:bg-gray-100 rounded-lg text-gray-600"
-            title="Toggle Alignment"
-          >
-            <AlignmentIcon alignment={block.alignment} />
-          </button>
-          <button 
-            onClick={() => onRemove(block.id)}
-            className="p-1 sm:p-1.5 hover:bg-red-50 text-red-500 rounded-lg"
-            title="Remove Block"
-          >
-            <Trash2 size={16} className="sm:w-[18px] sm:h-[18px]" />
-          </button>
+          <div className="flex items-center gap-1">
+            <button 
+              onClick={() => {
+                const next: Record<string, 'left' | 'center' | 'right'> = { left: 'center', center: 'right', right: 'left' };
+                onUpdate(block.id, { alignment: next[block.alignment] });
+              }}
+              className="p-2 hover:bg-gray-100 rounded-lg text-gray-600"
+              title="Toggle Alignment"
+            >
+              <AlignmentIcon alignment={block.alignment} />
+            </button>
+            <button 
+              onClick={() => onRemove(block.id)}
+              className="p-2 hover:bg-red-50 text-red-500 rounded-lg"
+              title="Remove Block"
+            >
+              <Trash2 size={20} />
+            </button>
+          </div>
         </div>
       )}
 
@@ -1050,6 +1068,8 @@ export default function App() {
   const [editingAcademicCoverData, setEditingAcademicCoverData] = useState<CoverPageSectionData>(DEFAULT_ACADEMIC_COVER);
   const [editingAcknowledgement, setEditingAcknowledgement] = useState<BasicSectionData>(DEFAULT_ACKNOWLEDGEMENT);
   const [editingDedication, setEditingDedication] = useState<BasicSectionData>(DEFAULT_DEDICATION);
+  const [appSettings, setAppSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
+  const [editingAppSettings, setEditingAppSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
   const [isEditing, setIsEditing] = useState(false);
   const [hasUnlocked, setHasUnlocked] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
@@ -1060,6 +1080,39 @@ export default function App() {
   const [hasCopied, setHasCopied] = useState(false);
   const [shareUrl, setShareUrl] = useState('');
   const [activeId, setActiveId] = useState<string | null>(null);
+
+  const bgFileInputRef = useRef<HTMLInputElement>(null);
+  const headerFileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleBgUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 20 * 1024 * 1024) {
+        alert("File too large (max 20MB)");
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = () => {
+        setEditingAppSettings(prev => ({ ...prev, bgImage: reader.result as string, bgType: 'image' }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleHeaderUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 2 * 1024 * 1024) {
+        alert("File too large (max 2MB)");
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = () => {
+        setEditingData(prev => ({ ...prev, headerImage: reader.result as string, showHeaderImage: true }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -1102,6 +1155,10 @@ export default function App() {
           if (parsed.dedication) {
             setDedication(parsed.dedication);
             setEditingDedication(parsed.dedication);
+          }
+          if (parsed.appSettings) {
+            setAppSettings(parsed.appSettings);
+            setEditingAppSettings(parsed.appSettings);
           }
           
           // Clear URL parameter so refreshing doesn't keep loading old shared data if they edit later
@@ -1210,6 +1267,15 @@ export default function App() {
         setEditingDedication(DEFAULT_DEDICATION);
       }
     }
+    const savedSettings = localStorage.getItem(SETTINGS_STORAGE_KEY);
+    if (savedSettings) {
+      try {
+        const parsed = JSON.parse(savedSettings);
+        const mergedSettings = { ...DEFAULT_SETTINGS, ...parsed };
+        setAppSettings(mergedSettings);
+        setEditingAppSettings(mergedSettings);
+      } catch (e) {}
+    }
   }, []);
 
   const handlePasswordSubmit = (e?: React.FormEvent) => {
@@ -1246,6 +1312,10 @@ export default function App() {
       setDedication(editingDedication);
       localStorage.setItem('portfolio_dedication', JSON.stringify(editingDedication));
 
+      // Save Settings
+      setAppSettings(editingAppSettings);
+      localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(editingAppSettings));
+
       setIsEditing(false);
       setHasUnlocked(false);
     } catch (e) {
@@ -1265,6 +1335,7 @@ export default function App() {
     setEditingAcademicCoverData(academicCoverData);
     setEditingAcknowledgement(acknowledgement);
     setEditingDedication(dedication);
+    setEditingAppSettings(appSettings);
     setEditingCoverData(coverPageData);
     setIsEditing(false);
     setHasUnlocked(false);
@@ -1276,7 +1347,8 @@ export default function App() {
       coverPage: coverPageData,
       academicCover: academicCoverData,
       acknowledgement: acknowledgement,
-      dedication: dedication
+      dedication: dedication,
+      appSettings: appSettings
     };
 
     const compressed = LZString.compressToEncodedURIComponent(JSON.stringify(allData));
@@ -1469,8 +1541,145 @@ export default function App() {
     );
   };
 
+  const BackgroundSettings = () => {
+    const fonts = [
+      { name: 'Modern Sans', value: "'Inter', sans-serif" },
+      { name: 'Elegant Serif', value: "'Playfair Display', serif" },
+      { name: 'Minimal Mono', value: "'JetBrains Mono', monospace" },
+      { name: 'Futuristic', value: "'Space Grotesk', sans-serif" },
+      { name: 'Soft Edge', value: "'Outfit', sans-serif" },
+      { name: 'Classical', value: "'Fraunces', serif" }
+    ];
+
+    return (
+      <div className="flex flex-col lg:flex-row gap-6 lg:pl-10 lg:border-l lg:border-neutral-100 w-full lg:w-auto">
+        {/* Background Config */}
+        <div className="flex flex-col gap-2">
+          <span className="text-[7px] sm:text-[10px] font-black uppercase tracking-[0.2em] sm:tracking-[0.3em] text-neutral-300 text-center lg:text-left">Background</span>
+          <div className="flex flex-wrap items-center justify-center lg:justify-start gap-2">
+            <div className="flex items-center gap-1 p-1 bg-neutral-50 rounded-xl border border-neutral-100">
+              <button 
+                onClick={() => setEditingAppSettings(prev => ({ ...prev, bgType: 'color' }))}
+                className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${editingAppSettings.bgType === 'color' ? 'bg-black text-white' : 'text-neutral-400 hover:text-black'}`}
+              >
+                Color
+              </button>
+              <button 
+                onClick={() => setEditingAppSettings(prev => ({ ...prev, bgType: 'image' }))}
+                className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${editingAppSettings.bgType === 'image' ? 'bg-black text-white' : 'text-neutral-400 hover:text-black'}`}
+              >
+                Image
+              </button>
+            </div>
+
+            {editingAppSettings.bgType === 'color' ? (
+              <div className="flex items-center gap-2">
+                <input 
+                  type="color" 
+                  value={editingAppSettings.bgColor}
+                  onChange={(e) => setEditingAppSettings(prev => ({ ...prev, bgColor: e.target.value }))}
+                  className="w-10 h-10 p-1 bg-white border border-neutral-100 rounded-xl cursor-pointer"
+                />
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                 <input 
+                    type="text" 
+                    placeholder="Image URL"
+                    value={editingAppSettings.bgImage.startsWith('data:') ? 'Local Image File' : editingAppSettings.bgImage}
+                    onChange={(e) => setEditingAppSettings(prev => ({ ...prev, bgImage: e.target.value }))}
+                    className="bg-neutral-50 border border-neutral-100 rounded-xl px-4 py-2 text-[10px] outline-none focus:border-black w-24 sm:w-32"
+                  />
+                  <button 
+                    onClick={() => bgFileInputRef.current?.click()}
+                    className="p-2 sm:p-2.5 bg-neutral-50 hover:bg-black hover:text-white border border-neutral-100 rounded-xl transition-all shadow-sm"
+                    title="Upload Local Image"
+                  >
+                    <Upload size={14} />
+                  </button>
+                  <input 
+                    type="file"
+                    ref={bgFileInputRef}
+                    className="hidden"
+                    accept="image/*"
+                    onChange={handleBgUpload}
+                  />
+                <div className="flex flex-col items-center gap-1">
+                    <span className="text-[7px] font-black text-neutral-300 uppercase">Opacity {editingAppSettings.bgOpacity ?? 100}%</span>
+                    <input 
+                      type="range" 
+                      min="0" 
+                      max="100" 
+                      value={editingAppSettings.bgOpacity ?? 100}
+                      onChange={(e) => setEditingAppSettings(prev => ({ ...prev, bgOpacity: parseInt(e.target.value) || 0 }))}
+                      className="w-16 h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-black"
+                    />
+                  </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Typography Config */}
+        <div className="flex flex-col gap-2 lg:pl-10 lg:border-l lg:border-neutral-100">
+          <span className="text-[7px] sm:text-[10px] font-black uppercase tracking-[0.2em] sm:tracking-[0.3em] text-neutral-300 text-center lg:text-left">Typography</span>
+          <div className="flex flex-wrap items-center justify-center lg:justify-start gap-2">
+            <select 
+              value={editingAppSettings.fontFamily}
+              onChange={(e) => setEditingAppSettings(prev => ({ ...prev, fontFamily: e.target.value }))}
+              className="bg-neutral-50 border border-neutral-100 rounded-xl px-4 py-2 text-[10px] font-black uppercase tracking-widest outline-none focus:border-black"
+            >
+              {fonts.map(font => (
+                <option key={font.name} value={font.value}>{font.name}</option>
+              ))}
+            </select>
+            
+            <div className="flex items-center gap-2">
+              <input 
+                type="color" 
+                value={editingAppSettings.textColor}
+                onChange={(e) => setEditingAppSettings(prev => ({ ...prev, textColor: e.target.value }))}
+                className="w-10 h-10 p-1 bg-white border border-neutral-100 rounded-xl cursor-pointer"
+                title="Text Color"
+              />
+              <span className="text-[8px] font-black text-neutral-300 uppercase">Text Color</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
-    <div className="relative min-h-screen font-sans selection:bg-black selection:text-white overflow-x-hidden scroll-smooth bg-white">
+    <div 
+      className="relative min-h-screen font-sans selection:bg-black selection:text-white overflow-x-hidden scroll-smooth"
+      style={{ 
+        color: appSettings.textColor,
+        fontFamily: appSettings.fontFamily
+      }}
+    >
+      {/* GLOBAL BACKGROUND SYSTEM */}
+      <div 
+        className="fixed inset-0 z-[-3]" 
+        style={{ backgroundColor: appSettings.bgColor }}
+      />
+      
+      {appSettings.bgType === 'image' && appSettings.bgImage && (
+        <div 
+          className="fixed inset-0 z-[-2]" 
+          style={{ 
+            backgroundImage: `url(${appSettings.bgImage})`,
+            opacity: (Number(appSettings.bgOpacity) || 0) / 100,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            backgroundAttachment: 'fixed'
+          }} 
+        />
+      )}
+
+      {/* Content Shield blurs the background and adds a base tint */}
+      <div className="fixed inset-0 z-[-1] bg-white/20 backdrop-blur-[2px]" />
+
       <AnimatePresence mode="wait">
         {isLoading ? (
           <LoadingScreen 
@@ -1493,13 +1702,13 @@ export default function App() {
             >
         <AnimatePresence mode="wait">
           {view === 'view1' ? (
-          <motion.div
+          <motion.div 
             key="view1"
             initial={{ opacity: 0, filter: 'blur(20px)', scale: 1.1 }}
             animate={{ opacity: 1, filter: 'blur(0px)', scale: 1 }}
             exit={{ opacity: 0, filter: 'blur(20px)', scale: 1.1 }}
             transition={{ duration: 1.5, ease: [0.22, 1, 0.36, 1] }}
-            className="fixed inset-0 z-50 bg-white flex flex-col p-2 sm:p-4 md:p-8 overflow-y-auto"
+            className="fixed inset-0 z-50 flex flex-col overflow-y-auto"
           >
             {/* Main Content */}
             <motion.div 
@@ -1625,6 +1834,81 @@ export default function App() {
                       const data = isEditing ? editingData : titlePageData;
                       
                       // 1. System Items
+                      if (itemId === 'sys-header' && (isEditing || data.showHeaderImage)) {
+                        return (
+                          <SortableItem key={itemId} id={itemId} editMode={isEditing}>
+                            <motion.div 
+                              variants={{
+                                hidden: { opacity: 0, scale: 0.8, y: 20 },
+                                show: { opacity: 1, scale: 1, y: 0, transition: { type: 'spring', damping: 15, stiffness: 100 } }
+                              }}
+                              className="w-full flex flex-col items-center gap-4 py-8 relative group/sys"
+                            >
+                               {isEditing ? (
+                                 <div className="flex flex-col items-center gap-4 w-full px-4 relative z-20">
+                                   {editingData.headerImage ? (
+                                     <div className="relative group/img">
+                                       <img 
+                                         src={editingData.headerImage} 
+                                         alt="Header" 
+                                         className="max-h-[300px] w-auto h-auto object-contain shadow-2xl rounded-2xl"
+                                         style={{ maxWidth: `${editingData.headerImageWidth}px` }}
+                                       />
+                                       <button 
+                                         onClick={() => setEditingData({ ...editingData, headerImage: '' })}
+                                         className="absolute -top-3 -right-3 p-3 bg-red-500 text-white rounded-full shadow-xl opacity-0 group-hover/img:opacity-100 transition-all hover:scale-110"
+                                       >
+                                         <Trash2 size={20} />
+                                       </button>
+                                     </div>
+                                   ) : (
+                                     <button 
+                                        onClick={() => headerFileInputRef.current?.click()}
+                                        className="w-full max-w-2xl aspect-[3/1] border-2 border-dashed border-gray-200 rounded-3xl flex flex-col items-center justify-center gap-3 text-gray-400 hover:border-black hover:text-black transition-all bg-gray-50/50"
+                                     >
+                                       <Upload size={32} />
+                                       <span className="font-black uppercase tracking-widest text-xs">Upload Header Image</span>
+                                     </button>
+                                   )}
+                                   <input 
+                                     type="file" 
+                                     ref={headerFileInputRef} 
+                                     className="hidden" 
+                                     accept="image/*" 
+                                     onChange={handleHeaderUpload} 
+                                   />
+                                   <div className="flex items-center gap-6 w-full max-w-md pt-4">
+                                     <div className="flex-1 space-y-2">
+                                       <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-neutral-400">
+                                          <span>Width: {editingData.headerImageWidth}px</span>
+                                       </div>
+                                       <input 
+                                         type="range" 
+                                         min="200" 
+                                         max="1200" 
+                                         value={editingData.headerImageWidth}
+                                         onChange={(e) => setEditingData({ ...editingData, headerImageWidth: parseInt(e.target.value) })}
+                                         className="w-full h-1 bg-gray-100 rounded-lg appearance-none cursor-pointer accent-black"
+                                       />
+                                     </div>
+                                      <button onClick={() => removeBlock(itemId)} className="p-4 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-2xl transition-all" title="Remove Header"><Trash2 size={24} /></button>
+                                   </div>
+                                 </div>
+                               ) : (
+                                 data.headerImage && (
+                                   <img 
+                                     src={data.headerImage} 
+                                     alt="Header" 
+                                     className="max-h-[400px] w-auto h-auto object-contain"
+                                     style={{ maxWidth: `${data.headerImageWidth}px` }}
+                                   />
+                                 )
+                               )}
+                            </motion.div>
+                          </SortableItem>
+                        );
+                      }
+
                       if (itemId === 'sys-title' && (isEditing || data.showTitle)) {
                         return (
                           <SortableItem key={itemId} id={itemId} editMode={isEditing}>
@@ -1730,9 +2014,9 @@ export default function App() {
                                 hidden: { opacity: 0, scaleX: 0 },
                                 show: { opacity: 1, scaleX: 1, transition: { duration: 1.2, ease: "circOut" } }
                               }}
-                              className="relative group/sys py-4 sm:py-8"
+                              className="relative group/sys py-4 sm:py-8 w-full"
                             >
-                              <div className="w-20 sm:w-48 h-[3px] sm:h-[6px] bg-black mx-auto rounded-full shadow-[0_10px_20px_rgba(0,0,0,0.1)] mb-4 sm:mb-8" />
+                              <div className="w-16 sm:w-24 h-1.5 sm:h-2 bg-black mx-auto rounded-full shadow-sm mb-4 sm:mb-8" />
                               {isEditing && (
                                 <button onClick={() => removeBlock(itemId)} className="absolute -right-12 top-1/2 -translate-y-1/2 p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"><Trash2 size={16} /></button>
                               )}
@@ -1752,8 +2036,16 @@ export default function App() {
                                className="space-y-3 sm:space-y-6 w-full py-4 relative group/sys"
                             >
                                {(isEditing || data.showSubmittedByLabel) && (
-                                <h3 className="text-[8px] sm:text-[10px] font-black tracking-[0.3em] sm:tracking-[0.6em] text-black uppercase opacity-60">Proffered By</h3>
-                              )}
+                                 isEditing ? (
+                                   <input 
+                                     className="text-center font-black tracking-[0.3em] uppercase opacity-60 bg-transparent border-b border-gray-100 outline-none focus:border-black text-[8px] sm:text-[10px] w-full"
+                                     value={editingData.submittedByLabel}
+                                     onChange={(e) => setEditingData({ ...editingData, submittedByLabel: e.target.value })}
+                                   />
+                                 ) : (
+                                   <h3 className="text-[8px] sm:text-[10px] font-black tracking-[0.3em] sm:tracking-[0.6em] text-black uppercase opacity-60">{data.submittedByLabel}</h3>
+                                 )
+                               )}
                               <div className="space-y-2 sm:space-y-6">
                                 {isEditing ? (
                                   <div className="flex items-center gap-4 max-w-2xl mx-auto px-4 relative z-20">
@@ -1793,10 +2085,21 @@ export default function App() {
                                 hidden: { opacity: 0, y: 30 },
                                 show: { opacity: 1, y: 0, transition: { duration: 0.8 } }
                               }}
-                              className="space-y-3 sm:space-y-6 w-full py-4 relative group/sys"
+                              className="space-y-3 sm:space-y-6 w-full py-4 relative group/sys pt-8 sm:pt-12"
                             >
-                              {(isEditing || data.showSubmittedToLabel) && (
-                                <h3 className="text-[8px] sm:text-[10px] font-black tracking-[0.3em] sm:tracking-[0.6em] text-black uppercase opacity-60">Acclaimed By</h3>
+                               {(isEditing || data.showSubmittedToLabel) && (
+                                 <div className="w-12 h-[2px] bg-black/10 mx-auto mb-4" />
+                               )}
+                               {(isEditing || data.showSubmittedToLabel) && (
+                                isEditing ? (
+                                  <input 
+                                    className="text-center font-black tracking-[0.3em] uppercase opacity-60 bg-transparent border-b border-gray-100 outline-none focus:border-black text-[8px] sm:text-[10px] w-full"
+                                    value={editingData.submittedToLabel}
+                                    onChange={(e) => setEditingData({ ...editingData, submittedToLabel: e.target.value })}
+                                  />
+                                ) : (
+                                  <h3 className="text-[8px] sm:text-[10px] font-black tracking-[0.3em] sm:tracking-[0.6em] text-black uppercase opacity-60">{data.submittedToLabel}</h3>
+                                )
                               )}
                               {isEditing ? (
                                 <div className="flex items-center gap-4 max-w-2xl mx-auto px-4 relative z-20">
@@ -1827,17 +2130,26 @@ export default function App() {
                               }}
                               className="pt-4 sm:pt-8 w-full relative group/sys"
                             >
-                              {isEditing ? (
-                                <div className="flex items-center gap-4 max-w-md mx-auto">
-                                  <input
-                                    className="block w-full text-center text-black border-b-2 border-gray-50 focus:border-black outline-none bg-transparent font-black uppercase tracking-[0.2em] sm:tracking-[0.4em] text-xs sm:text-base flex-1"
-                                    value={editingData.academicYear}
-                                    onChange={(e) => setEditingData({ ...editingData, academicYear: e.target.value })}
+                               {isEditing ? (
+                                <div className="space-y-4">
+                                  <input 
+                                    className="text-center font-black tracking-[0.3em] uppercase opacity-60 bg-transparent border-b border-gray-100 outline-none focus:border-black text-[8px] sm:text-[10px] w-full"
+                                    value={editingData.academicYearLabel}
+                                    onChange={(e) => setEditingData({ ...editingData, academicYearLabel: e.target.value })}
                                   />
-                                  <button onClick={() => removeBlock(itemId)} className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all" title="Remove Year"><Trash2 size={16} /></button>
+                                  <div className="flex items-center gap-4 max-w-md mx-auto">
+                                    <input
+                                      className="block w-full text-center text-black border-b-2 border-gray-50 focus:border-black outline-none bg-transparent font-black uppercase tracking-[0.2em] sm:tracking-[0.4em] text-xs sm:text-base flex-1"
+                                      value={editingData.academicYear}
+                                      onChange={(e) => setEditingData({ ...editingData, academicYear: e.target.value })}
+                                    />
+                                    <button onClick={() => removeBlock(itemId)} className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all" title="Remove Year"><Trash2 size={16} /></button>
+                                  </div>
                                 </div>
                               ) : (
-                                <p className="text-black font-black uppercase tracking-[0.2em] sm:tracking-[0.4em] md:tracking-[0.5em] text-[9px] sm:text-sm opacity-70">Cycles of {String(data.academicYear).includes('[object Object]') ? '2023-2024' : data.academicYear}</p>
+                                <p className="text-black font-black uppercase tracking-[0.2em] sm:tracking-[0.4em] md:tracking-[0.5em] text-[9px] sm:text-sm opacity-70">
+                                  {data.academicYearLabel} {String(data.academicYear).includes('[object Object]') ? '2023-2024' : data.academicYear}
+                                </p>
                               )}
                             </motion.div>
                           </SortableItem>
@@ -1929,12 +2241,12 @@ export default function App() {
             </motion.div>
           </motion.div>
         ) : (
-          <motion.div
+          <motion.div 
             key="view2"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="flex flex-col min-h-screen bg-white"
+            className="flex flex-col min-h-screen"
           >
             <header className="fixed top-0 left-0 w-full h-16 sm:h-28 bg-white/80 backdrop-blur-3xl flex items-center justify-between px-3 sm:px-10 md:px-16 z-[1001] border-b border-gray-100/50">
               <div className="flex items-center gap-2 sm:gap-6">
@@ -1953,14 +2265,16 @@ export default function App() {
               </div>
 
               <div className="flex items-center gap-1 sm:gap-4">
-                <button 
-                  onClick={generateShareLink}
-                  className="p-2 sm:p-4 rounded-xl sm:rounded-2xl bg-gray-50 text-neutral-600 hover:bg-neutral-100 transition-all active:scale-95 flex items-center justify-center sm:gap-2"
-                  title="Share Site Link"
-                >
-                  <Share2 size={16} className="sm:w-5 sm:h-5" />
-                  <span className="hidden sm:inline text-[10px] font-black uppercase tracking-widest">Share</span>
-                </button>
+                {isEditing && (
+                  <button 
+                    onClick={generateShareLink}
+                    className="p-2 sm:p-4 rounded-xl sm:rounded-2xl bg-gray-50 text-neutral-600 hover:bg-neutral-100 transition-all active:scale-95 flex items-center justify-center sm:gap-2"
+                    title="Share Site Link"
+                  >
+                    <Share2 size={16} className="sm:w-5 sm:h-5" />
+                    <span className="hidden sm:inline text-[10px] font-black uppercase tracking-widest">Share</span>
+                  </button>
+                )}
 
                 {isEditing && (
                   <div className="relative mr-1 sm:mr-2">
@@ -2140,12 +2454,12 @@ export default function App() {
                       if (itemId === 'sys-divider') {
                         return (
                           <SortableItem key={itemId} id={itemId} editMode={isEditing}>
-                            <div className="relative group/sys w-full">
-                              <div className="w-24 h-2 bg-black mx-auto rounded-full my-6" />
+                            <div className="relative group/sys w-full flex flex-col items-center py-4 sm:py-8 transition-all">
+                              <div className="w-16 sm:w-24 h-1.5 sm:h-2 bg-black rounded-full shadow-sm" />
                               {isEditing && (
                                 <button 
                                   onClick={() => removeBlock(itemId)}
-                                  className="absolute -right-12 top-0 p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                                  className="absolute -right-12 top-1/2 -translate-y-1/2 p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
                                 >
                                   <Trash2 size={16} />
                                 </button>
@@ -2306,7 +2620,7 @@ export default function App() {
                       ))}
                     </nav>
                     <div className="p-12 border-t border-gray-50 text-center">
-                      <p className="text-[10px] font-black text-black uppercase tracking-[0.6em] opacity-30">Academic Chronicle © 2026</p>
+                      <p className="text-[10px] font-black text-black uppercase tracking-[0.6em] opacity-30">zandel ragay portfolio @ 2026</p>
                     </div>
                   </motion.div>
                 </>
@@ -2366,6 +2680,7 @@ export default function App() {
             <div className="flex flex-col gap-1.5 sm:gap-3 w-full">
                 <span className="text-[7px] sm:text-[10px] font-black uppercase tracking-[0.2em] sm:tracking-[0.3em] text-neutral-300 text-center lg:text-left">UI Filters</span>
                 <div className="flex flex-wrap items-center justify-center lg:justify-start gap-1 sm:gap-2">
+                  <VisibilityToggle field="showHeaderImage" label="Header Logo" />
                   <VisibilityToggle field="showTitle" label="Title" />
                   <VisibilityToggle field="showSubtitle" label="Meta" />
                   <VisibilityToggle field="showDescription" label="Course" />
@@ -2374,9 +2689,63 @@ export default function App() {
                   <VisibilityToggle field="showSubmittedToLabel" label="To" />
                   <VisibilityToggle field="showProfessorName" label="Prof" />
                   <VisibilityToggle field="showAcademicYear" label="A.Y." />
+
+                  {['sys-header', 'sys-title', 'sys-subtitle', 'sys-desc', 'sys-divider', 'sys-student', 'sys-professor', 'sys-ay'].some(id => !editingData.layoutOrder.includes(id)) && (
+                    <button 
+                      onClick={() => {
+                        const systemOrder = ['sys-header', 'sys-title', 'sys-subtitle', 'sys-desc', 'sys-divider', 'sys-student', 'sys-professor', 'sys-ay'];
+                        const currentOrder = [...editingData.layoutOrder];
+                        systemOrder.forEach((sysId, index) => {
+                          if (!currentOrder.includes(sysId)) {
+                             // Try to insert near its correct position
+                             currentOrder.push(sysId);
+                          }
+                        });
+                        setEditingData({ ...editingData, layoutOrder: currentOrder });
+                      }}
+                      className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-[10px] font-black transition-all uppercase tracking-tighter shadow-sm border bg-amber-50 text-amber-600 border-amber-100 hover:bg-amber-100"
+                    >
+                      <RotateCw size={12} />
+                      Restore Elements
+                    </button>
+                  )}
                 </div>
             </div>
           )}
+
+          {isEditing && currentSection === 'cover-page' && (
+            <div className="flex flex-col gap-1.5 sm:gap-3 w-full">
+                <span className="text-[7px] sm:text-[10px] font-black uppercase tracking-[0.2em] sm:tracking-[0.3em] text-neutral-300 text-center lg:text-left">Cover Controls</span>
+                <div className="flex flex-wrap items-center justify-center lg:justify-start gap-1 sm:gap-2">
+                  <button 
+                    onClick={() => setEditingAcademicCoverData(prev => ({ ...prev, showLabel: !prev.showLabel }))}
+                    className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-tighter transition-all border ${
+                      editingAcademicCoverData.showLabel ? 'bg-black text-white border-black' : 'bg-neutral-50 text-neutral-400 border-neutral-100'
+                    }`}
+                  >
+                    Label
+                  </button>
+                  <button 
+                    onClick={() => setEditingAcademicCoverData(prev => ({ ...prev, showHeading: !prev.showHeading }))}
+                    className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-tighter transition-all border ${
+                      editingAcademicCoverData.showHeading ? 'bg-black text-white border-black' : 'bg-neutral-50 text-neutral-400 border-neutral-100'
+                    }`}
+                  >
+                    Heading
+                  </button>
+                  <button 
+                    onClick={() => setEditingAcademicCoverData(prev => ({ ...prev, showParagraph1: !prev.showParagraph1 }))}
+                    className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-tighter transition-all border ${
+                      editingAcademicCoverData.showParagraph1 ? 'bg-black text-white border-black' : 'bg-neutral-50 text-neutral-400 border-neutral-100'
+                    }`}
+                  >
+                    Intro
+                  </button>
+                </div>
+            </div>
+          )}
+
+          {isEditing && <BackgroundSettings />}
         </div>
       )}
     </DndContext>
