@@ -30,6 +30,7 @@ export interface ContentBlock {
   type: 'text' | 'image' | 'video';
   content: string;
   alignment: 'left' | 'center' | 'right';
+  pillars?: PillarCard[];
 }
 
 export interface PillarCard {

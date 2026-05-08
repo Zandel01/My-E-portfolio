@@ -630,19 +630,21 @@ const AcademicCoverPage = ({
                         value={data.heading}
                         onChange={(e) => onUpdate({ heading: e.target.value })}
                       />
-                      <button 
-                        onClick={() => onDuplicateSystem(itemId)}
-                        className="p-2 text-neutral-300 hover:text-black opacity-0 group-hover/sys:opacity-100 transition-all"
-                        title="Duplicate Element"
-                      >
-                        <Copy size={16} />
-                      </button>
-                      <button 
-                        onClick={() => onRemoveBlock(itemId)}
-                        className="p-2 text-red-100 hover:text-red-400 opacity-0 group-hover/sys:opacity-100 transition-all"
-                      >
-                        <Trash2 size={16} />
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button 
+                          onClick={() => onDuplicateSystem(itemId)}
+                          className="p-2 text-neutral-400 hover:text-black transition-all"
+                          title="Duplicate Element"
+                        >
+                          <Copy size={16} />
+                        </button>
+                        <button 
+                          onClick={() => onRemoveBlock(itemId)}
+                          className="p-2 text-red-300 hover:text-red-600 transition-all"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
                     </div>
                   ) : (
                     <h2 className={`text-xl sm:text-3xl font-bold uppercase text-black/60 tracking-tight w-full leading-tight ${data.alignment === 'left' ? 'text-left' : data.alignment === 'right' ? 'text-right' : 'text-center'}`}>
@@ -668,7 +670,7 @@ const AcademicCoverPage = ({
               <SortableItem id={itemId} editMode={isEditing}>
                 <div className="relative group/sys w-full flex flex-col items-center py-4 sm:py-8 transition-all">
                   <div className="w-16 sm:w-24 h-1.5 sm:h-2 bg-black rounded-full shadow-sm" />
-                  <div className="absolute -right-16 top-1/2 -translate-y-1/2 flex flex-col gap-2 opacity-0 group-hover/sys:opacity-100 transition-all">
+                  <div className="absolute -right-16 top-1/2 -translate-y-1/2 flex flex-col gap-2 transition-all">
                     <button 
                       onClick={() => onDuplicateSystem(itemId)}
                       className="p-2 text-neutral-400 hover:text-black hover:bg-neutral-50 rounded-lg transition-all"
@@ -794,13 +796,23 @@ const AcademicCoverPage = ({
               <SortableItem id={itemId} editMode={isEditing}>
                 <div className="relative group/sys w-full">
                   {isEditing && (
-                    <button 
-                      onClick={() => onRemoveBlock(itemId)}
-                      className="absolute -top-10 right-0 p-3 bg-red-50 text-red-400 hover:text-red-600 rounded-xl transition-all flex items-center gap-2"
-                    >
-                      <Trash2 size={16} />
-                      <span className="text-[10px] font-black uppercase">Remove Pillars</span>
-                    </button>
+                    <div className="absolute -top-10 right-0 flex items-center gap-2">
+                      <button 
+                        onClick={() => onDuplicateSystem(itemId)}
+                        className="p-3 bg-neutral-50 text-neutral-400 hover:text-black rounded-xl transition-all flex items-center gap-2"
+                        title="Duplicate Pillars"
+                      >
+                        <Copy size={16} />
+                        <span className="text-[10px] font-black uppercase">Duplicate</span>
+                      </button>
+                      <button 
+                        onClick={() => onRemoveBlock(itemId)}
+                        className="p-3 bg-red-50 text-red-400 hover:text-red-600 rounded-xl transition-all flex items-center gap-2"
+                      >
+                        <Trash2 size={16} />
+                        <span className="text-[10px] font-black uppercase">Remove</span>
+                      </button>
+                    </div>
                   )}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4 w-full">
                     {data.pillars.map((pillar, index) => (
@@ -914,7 +926,7 @@ function SortableItem({ id, editMode, children }: SortableItemProps) {
     >
       {editMode && (
         <>
-          <div className="absolute top-2 left-2 sm:left-auto sm:right-12 flex items-center bg-white shadow-2xl border border-gray-100 rounded-xl p-1 opacity-0 group-hover:opacity-100 transition-opacity z-20">
+          <div className="absolute top-2 left-2 sm:left-auto sm:right-12 flex items-center bg-white shadow-2xl border border-gray-100 rounded-xl p-1 z-20">
             <button 
               {...attributes} 
               {...listeners}
@@ -993,7 +1005,7 @@ function SortableBlock({ block, editMode, onUpdate, onRemove, onDuplicate }: Sor
       className={`group relative w-full ${alignmentClasses} space-y-2 py-4 ${editMode ? 'hover:bg-gray-50/50 rounded-2xl px-4 ring-1 ring-transparent hover:ring-gray-200 transition-all' : ''}`}
     >
       {editMode && (
-        <div className="absolute -top-6 left-2 right-2 sm:left-auto sm:right-2 flex items-center justify-between sm:justify-end gap-1 bg-white shadow-2xl border border-gray-100 rounded-xl p-1.5 opacity-0 group-hover:opacity-100 transition-opacity z-20">
+        <div className="absolute -top-6 left-2 right-2 sm:left-auto sm:right-2 flex items-center justify-between sm:justify-end gap-1 bg-white shadow-2xl border border-gray-100 rounded-xl p-1.5 z-20">
           <button 
             {...attributes} 
             {...listeners}
@@ -1031,7 +1043,57 @@ function SortableBlock({ block, editMode, onUpdate, onRemove, onDuplicate }: Sor
         </div>
       )}
 
-      {block.type === 'text' && (
+      {block.pillars && (
+        <div className="w-full">
+          {editMode && (
+            <p className="text-[10px] font-black uppercase tracking-widest text-neutral-400 mb-4 text-center">Pillars Block</p>
+          )}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full">
+            {block.pillars.map((pillar, index) => (
+              <div 
+                key={index} 
+                className="group/card p-8 rounded-3xl border border-neutral-100 bg-white hover:border-neutral-200 hover:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.05)] transition-all duration-500"
+              >
+                <div className="space-y-4 text-left">
+                  <span className="text-[10px] font-black uppercase tracking-[0.3em] text-black">
+                    PILLAR
+                  </span>
+                  {editMode ? (
+                    <div className="space-y-3">
+                      <input
+                        className="w-full bg-transparent border-b border-neutral-100 outline-none text-xl font-bold tracking-tight text-black focus:border-black transition-colors"
+                        value={pillar.title}
+                        onChange={(e) => {
+                          const newPillars = [...(block.pillars || [])];
+                          newPillars[index] = { ...newPillars[index], title: e.target.value };
+                          onUpdate(block.id, { pillars: newPillars });
+                        }}
+                      />
+                      <textarea
+                        className="w-full bg-transparent outline-none text-sm text-neutral-500 leading-relaxed resize-none focus:text-black transition-colors"
+                        value={pillar.description}
+                        onChange={(e) => {
+                          const newPillars = [...(block.pillars || [])];
+                          newPillars[index] = { ...newPillars[index], description: e.target.value };
+                          onUpdate(block.id, { pillars: newPillars });
+                        }}
+                        rows={2}
+                      />
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <h3 className="text-xl font-bold tracking-tight text-black">{pillar.title}</h3>
+                      <p className="text-sm text-neutral-500 leading-relaxed font-sans">{pillar.description}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {block.type === 'text' && !block.pillars && (
         editMode ? (
           <textarea
             className="w-full p-6 border-2 border-dashed border-gray-200 rounded-2xl focus:border-black focus:bg-white outline-none bg-transparent resize-none text-center transition-all text-xl font-medium placeholder:text-gray-300"
@@ -1821,18 +1883,20 @@ export default function App() {
     let content = '';
     let alignment: 'left' | 'center' | 'right' = 'center';
     let type: 'text' | 'image' | 'video' = 'text';
+    let pillars: { title: string; description: string }[] | undefined;
 
     if (view === 'view1') {
-        if (itemId === 'sys-header') content = editingData.title;
+        if (itemId === 'sys-header') {
+            content = editingData.headerImage;
+            type = 'image';
+        }
         else if (itemId === 'sys-title') content = editingData.title;
         else if (itemId === 'sys-subtitle') content = editingData.subtitle;
         else if (itemId === 'sys-desc') content = editingData.description;
-        else if (itemId === 'sys-student') content = editingData.studentName;
+        else if (itemId === 'sys-student') content = `${editingData.studentName}\n${editingData.courseYearSection}`;
         else if (itemId === 'sys-professor') content = editingData.professorName;
         else if (itemId === 'sys-ay') content = editingData.academicYear;
-        else if (itemId === 'sys-divider') {
-            content = '---';
-        }
+        else if (itemId === 'sys-divider') content = '---';
         alignment = editingData.alignment || 'center';
     } else if (currentSection === 'cover-page') {
         if (itemId === 'sys-label') content = editingAcademicCoverData.label;
@@ -1840,6 +1904,10 @@ export default function App() {
         else if (itemId === 'sys-p1') content = editingAcademicCoverData.paragraph1;
         else if (itemId === 'sys-p2') content = editingAcademicCoverData.paragraph2;
         else if (itemId === 'sys-divider') content = '---';
+        else if (itemId === 'sys-pillars') {
+            pillars = editingAcademicCoverData.pillars;
+            content = 'Dynamic Pillars';
+        }
         alignment = editingAcademicCoverData.alignment || 'center';
     } else {
         const state = getSectionState(currentSection);
@@ -1855,7 +1923,7 @@ export default function App() {
         }
     }
 
-    const newBlock: ContentBlock = { id: blockId, type, content, alignment };
+    const newBlock: ContentBlock = { id: blockId, type, content, alignment, pillars };
 
     if (view === 'view1') {
         const index = editingData.layoutOrder.indexOf(itemId);
@@ -2332,7 +2400,11 @@ export default function App() {
                                          className="w-full h-1 bg-gray-100 rounded-lg appearance-none cursor-pointer accent-black"
                                        />
                                      </div>
-                                      <button onClick={() => removeBlock(itemId)} className="p-4 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-2xl transition-all" title="Remove Header"><Trash2 size={24} /></button>
+                                                                            <div className="flex flex-col gap-2">
+                                        <button onClick={() => duplicateSystemItem(itemId)} className="p-4 text-neutral-400 hover:text-black hover:bg-neutral-50 rounded-2xl transition-all" title="Duplicate Header"><Copy size={24} /></button>
+                                        <button onClick={() => removeBlock(itemId)} className="p-4 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-2xl transition-all" title="Remove Header"><Trash2 size={24} /></button>
+                                      </div>
+
                                    </div>
                                  </div>
                                ) : (
@@ -2885,7 +2957,7 @@ export default function App() {
                               <div className="relative group/sys w-full flex flex-col items-center py-4 sm:py-8 transition-all">
                                 <div className="w-16 sm:w-24 h-1.5 sm:h-2 bg-black rounded-full shadow-sm" />
                                 {isEditing && (
-                                  <div className="absolute -right-16 top-1/2 -translate-y-1/2 flex flex-col gap-2 opacity-0 group-hover/sys:opacity-100 transition-all">
+                                  <div className="absolute -right-16 top-1/2 -translate-y-1/2 flex flex-col gap-2 transition-all">
                                     <button 
                                       onClick={() => duplicateSystemItem(itemId)}
                                       className="p-2 text-neutral-400 hover:text-black hover:bg-neutral-50 rounded-lg transition-all"
