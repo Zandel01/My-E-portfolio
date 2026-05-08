@@ -559,203 +559,256 @@ const AcademicCoverPage = ({
       : data.alignment === 'right' ? 'items-end text-right'
       : 'items-center text-center'
     }`}>
-      {data.layoutOrder.map((itemId) => {
+      {data.layoutOrder.map((itemId, index) => {
+        const isEven = index % 2 === 0;
+
         // 1. System Items
         if (itemId === 'sys-label' && (isEditing || data.showLabel)) {
           return (
-            <SortableItem key={itemId} id={itemId} editMode={isEditing}>
-              <div className={`w-full relative group/sys ${data.alignment === 'left' ? 'text-left' : data.alignment === 'right' ? 'text-right' : 'text-center'}`}>
-                {isEditing ? (
-                  <div className="flex items-center gap-4">
-                    <input
-                      className={`w-full bg-transparent border-b border-neutral-200 outline-none text-[clamp(1.5rem,7.5vw,5rem)] font-black font-display uppercase tracking-[-0.04em] leading-tight text-black focus:text-black transition-colors ${data.alignment === 'left' ? 'text-left' : data.alignment === 'right' ? 'text-right' : 'text-center'}`}
-                      value={data.label}
-                      onChange={(e) => onUpdate({ label: e.target.value })}
-                    />
-                    <button 
-                      onClick={() => onRemoveBlock(itemId)}
-                      className="p-3 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
-                    >
-                      <Trash2 size={24} />
-                    </button>
-                  </div>
-                ) : (
-                  <h1 className={`text-[clamp(1.5rem,7.5vw,5rem)] font-black font-display uppercase tracking-[-0.04em] leading-tight text-black w-full`}>
-                    {data.label}
-                  </h1>
-                )}
-              </div>
-            </SortableItem>
+            <motion.div
+              key={itemId}
+              initial={{ opacity: 0, x: isEven ? -80 : 80 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true, margin: "-100px" }}
+              transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+              className="w-full"
+            >
+              <SortableItem id={itemId} editMode={isEditing}>
+                <div className={`w-full relative group/sys ${data.alignment === 'left' ? 'text-left' : data.alignment === 'right' ? 'text-right' : 'text-center'}`}>
+                  {isEditing ? (
+                    <div className="flex items-center gap-4">
+                      <input
+                        className={`w-full bg-transparent border-b border-neutral-200 outline-none text-[clamp(1.5rem,7.5vw,5rem)] font-black font-display uppercase tracking-[-0.04em] leading-tight text-black focus:text-black transition-colors ${data.alignment === 'left' ? 'text-left' : data.alignment === 'right' ? 'text-right' : 'text-center'}`}
+                        value={data.label}
+                        onChange={(e) => onUpdate({ label: e.target.value })}
+                      />
+                      <button 
+                        onClick={() => onRemoveBlock(itemId)}
+                        className="p-3 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
+                      >
+                        <Trash2 size={24} />
+                      </button>
+                    </div>
+                  ) : (
+                    <h1 className={`text-[clamp(1.5rem,7.5vw,5rem)] font-black font-display uppercase tracking-[-0.04em] leading-tight text-black w-full`}>
+                      {data.label}
+                    </h1>
+                  )}
+                </div>
+              </SortableItem>
+            </motion.div>
           );
         }
 
         if (itemId === 'sys-heading' && (isEditing || data.showHeading)) {
           return (
-            <SortableItem key={itemId} id={itemId} editMode={isEditing}>
-               <div className={`w-full relative group/sys ${data.alignment === 'left' ? 'text-left' : data.alignment === 'right' ? 'text-right' : 'text-center'}`}>
-                {isEditing ? (
-                  <div className="flex items-center gap-4">
-                    <input
-                      className={`w-full bg-transparent border-b border-neutral-200 outline-none text-xl sm:text-2xl font-bold uppercase tracking-tight text-black/60 focus:text-black transition-all ${data.alignment === 'left' ? 'text-left' : data.alignment === 'right' ? 'text-right' : 'text-center'}`}
-                      value={data.heading}
-                      onChange={(e) => onUpdate({ heading: e.target.value })}
-                    />
-                    <button 
-                      onClick={() => onRemoveBlock(itemId)}
-                      className="p-2 text-red-100 hover:text-red-400 opacity-0 group-hover/sys:opacity-100 transition-all"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                ) : (
-                  <h2 className={`text-xl sm:text-3xl font-bold uppercase text-black/60 tracking-tight w-full leading-tight ${data.alignment === 'left' ? 'text-left' : data.alignment === 'right' ? 'text-right' : 'text-center'}`}>
-                    {String(data.heading).includes('[object Object]') ? DEFAULT_ACADEMIC_COVER.heading : data.heading}
-                  </h2>
-                )}
-              </div>
-            </SortableItem>
+            <motion.div
+              key={itemId}
+              initial={{ opacity: 0, x: isEven ? 80 : -80 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true, margin: "-100px" }}
+              transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}
+              className="w-full"
+            >
+              <SortableItem id={itemId} editMode={isEditing}>
+                 <div className={`w-full relative group/sys ${data.alignment === 'left' ? 'text-left' : data.alignment === 'right' ? 'text-right' : 'text-center'}`}>
+                  {isEditing ? (
+                    <div className="flex items-center gap-4">
+                      <input
+                        className={`w-full bg-transparent border-b border-neutral-200 outline-none text-xl sm:text-2xl font-bold uppercase tracking-tight text-black/60 focus:text-black transition-all ${data.alignment === 'left' ? 'text-left' : data.alignment === 'right' ? 'text-right' : 'text-center'}`}
+                        value={data.heading}
+                        onChange={(e) => onUpdate({ heading: e.target.value })}
+                      />
+                      <button 
+                        onClick={() => onRemoveBlock(itemId)}
+                        className="p-2 text-red-100 hover:text-red-400 opacity-0 group-hover/sys:opacity-100 transition-all"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  ) : (
+                    <h2 className={`text-xl sm:text-3xl font-bold uppercase text-black/60 tracking-tight w-full leading-tight ${data.alignment === 'left' ? 'text-left' : data.alignment === 'right' ? 'text-right' : 'text-center'}`}>
+                      {String(data.heading).includes('[object Object]') ? DEFAULT_ACADEMIC_COVER.heading : data.heading}
+                    </h2>
+                  )}
+                </div>
+              </SortableItem>
+            </motion.div>
           );
         }
 
         if (itemId === 'sys-divider') {
           return (
-            <SortableItem key={itemId} id={itemId} editMode={isEditing}>
-              <div className="relative group/sys w-full flex flex-col items-center py-4 sm:py-8 transition-all">
-                <div className="w-16 sm:w-24 h-1.5 sm:h-2 bg-black rounded-full shadow-sm" />
-                {isEditing && (
-                  <button 
-                    onClick={() => onRemoveBlock(itemId)}
-                    className="absolute -right-12 top-1/2 -translate-y-1/2 p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
-                  >
-                    <Trash2 size={16} />
-                  </button>
-                )}
-              </div>
-            </SortableItem>
+            <motion.div
+              key={itemId}
+              initial={{ scaleX: 0, opacity: 0 }}
+              whileInView={{ scaleX: 1, opacity: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.8, delay: 0.2 }}
+              className="w-full flex-col items-center flex"
+            >
+              <SortableItem id={itemId} editMode={isEditing}>
+                <div className="relative group/sys w-full flex flex-col items-center py-4 sm:py-8 transition-all">
+                  <div className="w-16 sm:w-24 h-1.5 sm:h-2 bg-black rounded-full shadow-sm" />
+                  {isEditing && (
+                    <button 
+                      onClick={() => onRemoveBlock(itemId)}
+                      className="absolute -right-12 top-1/2 -translate-y-1/2 p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  )}
+                </div>
+              </SortableItem>
+            </motion.div>
           );
         }
 
         if (itemId === 'sys-p1' && (isEditing || data.showParagraph1)) {
           return (
-            <SortableItem key={itemId} id={itemId} editMode={isEditing}>
-              <div className="max-w-2xl mx-auto w-full relative group/sys z-10">
-                {isEditing ? (
-                  <div className="flex gap-4 relative z-20">
-                    <textarea
-                      className="w-full bg-neutral-50 p-8 rounded-3xl border border-neutral-100 outline-none text-lg text-black leading-relaxed resize-none focus:bg-white focus:border-neutral-300 transition-all font-sans"
-                      value={data.paragraph1}
-                      onChange={(e) => onUpdate({ paragraph1: e.target.value })}
-                      rows={8}
-                    />
-                    <button 
-                      onClick={() => onRemoveBlock(itemId)}
-                      className="self-start p-3 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
-                    >
-                      <Trash2 size={20} />
-                    </button>
-                  </div>
-                ) : (
-                  <p className={`text-base sm:text-lg md:text-xl text-black leading-relaxed sm:leading-[1.8] font-sans px-2 sm:px-0 ${data.alignment === 'left' ? 'text-left' : data.alignment === 'right' ? 'text-right' : 'text-left sm:text-justify'}`}>
-                    <span className="float-left text-6xl sm:text-8xl font-serif mr-4 mt-1 sm:mt-2 h-[60px] sm:h-[80px] leading-[0.8] text-black">
-                      {data.paragraph1.charAt(0)}
-                    </span>
-                    {data.paragraph1.slice(1)}
-                  </p>
-                )}
-              </div>
-            </SortableItem>
+            <motion.div
+              key={itemId}
+              initial={{ opacity: 0, x: isEven ? -60 : 60 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true, margin: "-50px" }}
+              transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+              className="w-full"
+            >
+              <SortableItem id={itemId} editMode={isEditing}>
+                <div className="max-w-2xl mx-auto w-full relative group/sys z-10 font-sans tracking-tight">
+                  {isEditing ? (
+                    <div className="flex gap-4 relative z-20">
+                      <textarea
+                        className="w-full bg-neutral-50 p-8 rounded-3xl border border-neutral-100 outline-none text-lg text-black leading-relaxed resize-none focus:bg-white focus:border-neutral-300 transition-all font-sans"
+                        value={data.paragraph1}
+                        onChange={(e) => onUpdate({ paragraph1: e.target.value })}
+                        rows={8}
+                      />
+                      <button 
+                        onClick={() => onRemoveBlock(itemId)}
+                        className="p-3 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
+                      >
+                        <Trash2 size={24} />
+                      </button>
+                    </div>
+                  ) : (
+                    <p className={`text-lg sm:text-2xl text-black leading-relaxed italic ${data.alignment === 'center' ? 'text-center' : data.alignment === 'right' ? 'text-right' : 'text-left'}`}>
+                      {data.paragraph1}
+                    </p>
+                  )}
+                </div>
+              </SortableItem>
+            </motion.div>
           );
         }
 
         if (itemId === 'sys-p2') {
           return (
-            <SortableItem key={itemId} id={itemId} editMode={isEditing}>
-              <div className="max-w-2xl mx-auto w-full relative group/sys z-10">
-                {isEditing ? (
-                  <div className="flex gap-4 relative z-20">
-                    <textarea
-                      className="w-full bg-neutral-50 p-8 rounded-3xl border border-neutral-100 outline-none text-lg text-black leading-relaxed resize-none focus:bg-white focus:border-neutral-300 transition-all font-sans"
-                      value={data.paragraph2}
-                      onChange={(e) => onUpdate({ paragraph2: e.target.value })}
-                      rows={6}
-                    />
-                    <button 
-                      onClick={() => onRemoveBlock(itemId)}
-                      className="self-start p-3 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
-                    >
-                      <Trash2 size={20} />
-                    </button>
-                  </div>
-                ) : (
-                  <p className={`text-lg text-black leading-[1.8] font-sans opacity-90 decoration-neutral-100 ${data.alignment === 'left' ? 'text-left' : data.alignment === 'right' ? 'text-right' : 'text-left sm:text-justify'}`}>
-                    {data.paragraph2}
-                  </p>
-                )}
-              </div>
-            </SortableItem>
+            <motion.div
+              key={itemId}
+              initial={{ opacity: 0, x: isEven ? 60 : -60 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true, margin: "-50px" }}
+              transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}
+              className="w-full"
+            >
+              <SortableItem id={itemId} editMode={isEditing}>
+                <div className="max-w-2xl mx-auto w-full relative group/sys z-10">
+                  {isEditing ? (
+                    <div className="flex gap-4 relative z-20">
+                      <textarea
+                        className="w-full bg-neutral-50 p-8 rounded-3xl border border-neutral-100 outline-none text-lg text-black leading-relaxed resize-none focus:bg-white focus:border-neutral-300 transition-all font-sans"
+                        value={data.paragraph2}
+                        onChange={(e) => onUpdate({ paragraph2: e.target.value })}
+                        rows={6}
+                      />
+                      <button 
+                        onClick={() => onRemoveBlock(itemId)}
+                        className="self-start p-3 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
+                      >
+                        <Trash2 size={20} />
+                      </button>
+                    </div>
+                  ) : (
+                    <p className={`text-lg text-black leading-[1.8] font-sans opacity-90 decoration-neutral-100 ${data.alignment === 'left' ? 'text-left' : data.alignment === 'right' ? 'text-right' : 'text-left sm:text-justify'}`}>
+                      {data.paragraph2}
+                    </p>
+                  )}
+                </div>
+              </SortableItem>
+            </motion.div>
           );
         }
 
         if (itemId === 'sys-pillars') {
           return (
-            <SortableItem key={itemId} id={itemId} editMode={isEditing}>
-              <div className="relative group/sys w-full">
-                {isEditing && (
-                  <button 
-                    onClick={() => onRemoveBlock(itemId)}
-                    className="absolute -top-10 right-0 p-3 bg-red-50 text-red-400 hover:text-red-600 rounded-xl transition-all flex items-center gap-2"
-                  >
-                    <Trash2 size={16} />
-                    <span className="text-[10px] font-black uppercase">Remove Pillars</span>
-                  </button>
-                )}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4 w-full">
-                  {data.pillars.map((pillar, index) => (
-                    <div 
-                      key={index} 
-                      className="group/card p-8 rounded-3xl border border-neutral-100 bg-white hover:border-neutral-200 hover:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.05)] hover:-translate-y-1 transition-all duration-500"
+            <motion.div
+              key={itemId}
+              initial={{ opacity: 0, scale: 0.95 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1], delay: 0.2 }}
+              className="w-full"
+            >
+              <SortableItem id={itemId} editMode={isEditing}>
+                <div className="relative group/sys w-full">
+                  {isEditing && (
+                    <button 
+                      onClick={() => onRemoveBlock(itemId)}
+                      className="absolute -top-10 right-0 p-3 bg-red-50 text-red-400 hover:text-red-600 rounded-xl transition-all flex items-center gap-2"
                     >
-                          <div className="space-y-4 text-left">
-                        <span className="text-[10px] font-black uppercase tracking-[0.3em] text-black transition-colors">
-                          PILLAR
-                        </span>
-                        {isEditing ? (
-                          <div className="space-y-3">
-                            <input
-                              className="w-full bg-transparent border-b border-neutral-100 outline-none text-xl font-bold tracking-tight text-black focus:border-black transition-colors"
-                              value={pillar.title}
-                              onChange={(e) => {
-                                const newPillars = [...data.pillars] as [any, any, any, any];
-                                newPillars[index].title = e.target.value;
-                                onUpdate({ pillars: newPillars });
-                              }}
-                            />
-                            <input
-                              className="w-full bg-transparent border-b border-neutral-100 outline-none text-sm text-black italic focus:text-black focus:not-italic transition-all"
-                              value={pillar.description}
-                              onChange={(e) => {
-                                const newPillars = [...data.pillars] as [any, any, any, any];
-                                newPillars[index].description = e.target.value;
-                                onUpdate({ pillars: newPillars });
-                              }}
-                            />
-                          </div>
-                        ) : (
-                          <div className="space-y-2">
-                            <h3 className="text-2xl font-bold tracking-tight text-black">
-                              {pillar.title}
-                            </h3>
-                            <p className="text-sm text-black leading-relaxed opacity-80">
-                              {pillar.description}
-                            </p>
-                          </div>
-                        )}
+                      <Trash2 size={16} />
+                      <span className="text-[10px] font-black uppercase">Remove Pillars</span>
+                    </button>
+                  )}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4 w-full">
+                    {data.pillars.map((pillar, index) => (
+                      <div 
+                        key={index} 
+                        className="group/card p-8 rounded-3xl border border-neutral-100 bg-white hover:border-neutral-200 hover:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.05)] hover:-translate-y-1 transition-all duration-500"
+                      >
+                            <div className="space-y-4 text-left">
+                          <span className="text-[10px] font-black uppercase tracking-[0.3em] text-black transition-colors">
+                            PILLAR
+                          </span>
+                          {isEditing ? (
+                            <div className="space-y-3">
+                              <input
+                                className="w-full bg-transparent border-b border-neutral-100 outline-none text-xl font-bold tracking-tight text-black focus:border-black transition-colors"
+                                value={pillar.title}
+                                onChange={(e) => {
+                                  const newPillars = [...data.pillars] as [any, any, any, any];
+                                  newPillars[index].title = e.target.value;
+                                  onUpdate({ pillars: newPillars });
+                                }}
+                              />
+                              <input
+                                className="w-full bg-transparent border-b border-neutral-100 outline-none text-sm text-black italic focus:text-black focus:not-italic transition-all"
+                                value={pillar.description}
+                                onChange={(e) => {
+                                  const newPillars = [...data.pillars] as [any, any, any, any];
+                                  newPillars[index].description = e.target.value;
+                                  onUpdate({ pillars: newPillars });
+                                }}
+                              />
+                            </div>
+                          ) : (
+                            <div className="space-y-2">
+                              <h3 className="text-2xl font-bold tracking-tight text-black">
+                                {pillar.title}
+                              </h3>
+                              <p className="text-sm text-black leading-relaxed opacity-80">
+                                {pillar.description}
+                              </p>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              </div>
-            </SortableItem>
+              </SortableItem>
+            </motion.div>
           );
         }
 
@@ -763,13 +816,21 @@ const AcademicCoverPage = ({
         const block = data.blocks?.find(b => b.id === itemId);
         if (block) {
           return (
-            <SortableBlock 
-              key={block.id} 
-              block={block} 
-              editMode={isEditing} 
-              onUpdate={onUpdateBlock}
-              onRemove={onRemoveBlock}
-            />
+            <motion.div
+              key={block.id}
+              initial={{ opacity: 0, x: isEven ? -60 : 60 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true, margin: "-50px" }}
+              transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+              className="w-full"
+            >
+              <SortableBlock 
+                block={block} 
+                editMode={isEditing} 
+                onUpdate={onUpdateBlock}
+                onRemove={onRemoveBlock}
+              />
+            </motion.div>
           );
         }
 
@@ -2557,20 +2618,13 @@ export default function App() {
                     strategy={verticalListSortingStrategy}
                   >
                 {currentSection === 'cover-page' ? (
-                  <motion.div
-                    initial={{ opacity: 0, y: 30 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -30 }}
-                    transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-                  >
-                    <AcademicCoverPage 
-                      data={isEditing ? editingAcademicCoverData : academicCoverData}
-                      isEditing={isEditing}
-                      onUpdate={(updates) => setEditingAcademicCoverData(prev => ({ ...prev, ...updates }))}
-                      onUpdateBlock={updateBlock}
-                      onRemoveBlock={removeBlock}
-                    />
-                  </motion.div>
+                  <AcademicCoverPage 
+                    data={isEditing ? editingAcademicCoverData : academicCoverData}
+                    isEditing={isEditing}
+                    onUpdate={(updates) => setEditingAcademicCoverData(prev => ({ ...prev, ...updates }))}
+                    onUpdateBlock={updateBlock}
+                    onRemoveBlock={removeBlock}
+                  />
                 ) : (
                   <div className={`max-w-4xl mx-auto px-6 py-20 space-y-12 animate-in fade-in duration-700 flex flex-col ${
                     (isEditing ? (getSectionState(currentSection)?.[2] as any) : (getSectionState(currentSection)?.[0] as any))?.alignment === 'left' ? 'items-start text-left'
