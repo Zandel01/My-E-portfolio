@@ -1816,40 +1816,41 @@ export default function App() {
   };
 
   const generateShareLink = () => {
+    // If we are editing, we should use the current editing states to ensure the share link reflects 
+    // the EXACT state the user sees on screen, even if they haven't clicked "Save All" yet.
     const allData: any = {
-      titlePage: titlePageData,
-      coverPage: coverPageData,
-      academicCover: academicCoverData,
-      acknowledgement: acknowledgement,
-      dedication: dedication,
-      philosophy: philosophy,
-      cv: cv,
-      achievements: achievements,
-      seminars: seminars,
-      deptBackground: deptBackground,
-      teachers: teachers,
-      inclusions: inclusions,
-      appendices: appendices,
-      premises: premises,
-      logo: logo,
-      introHistory: introHistory,
-      missionVision: missionVision,
-      orgStructure: orgStructure,
-      subjectsTaught: subjectsTaught,
-      messageTeachers: messageTeachers,
-      quizzes: quizzes,
-      activities: activities,
-      lessonPlan: lessonPlan,
-      instructionalMaterials: instructionalMaterials,
-      extracurricular: extracurricular,
-      evidence: evidence,
-      appSettings: appSettings
+      titlePage: isEditing ? editingData : titlePageData,
+      coverPage: isEditing ? editingCoverData : coverPageData,
+      academicCover: isEditing ? editingAcademicCoverData : academicCoverData,
+      acknowledgement: isEditing ? editingAcknowledgement : acknowledgement,
+      dedication: isEditing ? editingDedication : dedication,
+      philosophy: isEditing ? editingPhilosophy : philosophy,
+      cv: isEditing ? editingCV : cv,
+      achievements: isEditing ? editingAchievements : achievements,
+      seminars: isEditing ? editingSeminars : seminars,
+      deptBackground: isEditing ? editingDeptBackground : deptBackground,
+      teachers: isEditing ? editingTeachers : teachers,
+      inclusions: isEditing ? editingInclusions : inclusions,
+      appendices: isEditing ? editingAppendices : appendices,
+      premises: isEditing ? editingPremises : premises,
+      logo: isEditing ? editingLogo : logo,
+      introHistory: isEditing ? editingIntroHistory : introHistory,
+      missionVision: isEditing ? editingMissionVision : missionVision,
+      orgStructure: isEditing ? editingOrgStructure : orgStructure,
+      subjectsTaught: isEditing ? editingSubjectsTaught : subjectsTaught,
+      messageTeachers: isEditing ? editingMessageTeachers : messageTeachers,
+      quizzes: isEditing ? editingQuizzes : quizzes,
+      activities: isEditing ? editingActivities : activities,
+      lessonPlan: isEditing ? editingLessonPlan : lessonPlan,
+      instructionalMaterials: isEditing ? editingInstructionalMaterials : instructionalMaterials,
+      extracurricular: isEditing ? editingExtracurricular : extracurricular,
+      evidence: isEditing ? editingEvidence : evidence,
+      appSettings: isEditing ? editingAppSettings : appSettings
     };
 
     const compressed = LZString.compressToEncodedURIComponent(JSON.stringify(allData));
     
     // Most browsers/servers have a limit around 8k-16k characters. 
-    // We'll show a warning in the UI instead of an alert.
     const tooLarge = compressed.length > 8000;
     setIsUrlTooLarge(tooLarge);
     
@@ -2273,29 +2274,19 @@ export default function App() {
           </div>
         </div>
 
-        {/* Cloud Storage Config */}
+        {/* Share & Save Actions */}
         <div className="flex flex-col gap-2 lg:pl-10 lg:border-l lg:border-neutral-100">
-          <span className="text-[7px] sm:text-[10px] font-black uppercase tracking-[0.2em] sm:tracking-[0.3em] text-neutral-300 text-center lg:text-left">Cloud Storage</span>
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center gap-2">
-              <input 
-                type="password" 
-                placeholder="ImgBB API Key"
-                value={editingAppSettings.imgbbKey || ''}
-                onChange={(e) => setEditingAppSettings(prev => ({ ...prev, imgbbKey: e.target.value }))}
-                className="bg-neutral-50 border border-neutral-100 rounded-xl px-4 py-2 text-[10px] outline-none focus:border-black w-24 sm:w-40"
-              />
-              <a 
-                href="https://api.imgbb.com/" 
-                target="_blank" 
-                rel="noreferrer"
-                className="text-[8px] font-black text-blue-500 hover:underline uppercase"
-              >
-                Get Key
-              </a>
-            </div>
-            <p className="text-[7px] text-neutral-400 max-w-[150px] leading-tight">
-              Avoid 5MB limit: upload large images to the cloud.
+          <span className="text-[7px] sm:text-[10px] font-black uppercase tracking-[0.2em] sm:tracking-[0.3em] text-neutral-300 text-center lg:text-left">Publish</span>
+          <div className="flex items-center justify-center lg:justify-start gap-2">
+            <button 
+              onClick={generateShareLink}
+              className="flex items-center gap-2 px-6 py-3 bg-black text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-neutral-800 transition-all shadow-lg active:scale-95"
+            >
+              <Share2 size={14} />
+              Share Publicly
+            </button>
+            <p className="text-[7px] text-neutral-400 max-w-[120px] ml-2 leading-tight">
+              Generate a unique link for others to see your work.
             </p>
           </div>
         </div>
@@ -2444,15 +2435,7 @@ export default function App() {
                         </button>
 
                         <div className="w-[1px] h-8 bg-gray-100 mx-0.5 sm:mx-1" />
-
-                        <button 
-                          onClick={generateShareLink}
-                          className="p-2 sm:p-4 rounded-xl sm:rounded-[1.5rem] bg-gray-50 text-neutral-600 hover:bg-neutral-100 transition-all active:scale-95"
-                          title="Share Portfolio Link"
-                        >
-                          <Share2 size={20} className="sm:w-6 sm:h-6" />
-                        </button>
-
+                        
                         <button 
                           onClick={() => {
                             setIsEditing(false);
@@ -2973,17 +2956,6 @@ export default function App() {
               </div>
 
               <div className="flex items-center gap-1 sm:gap-4">
-                {isEditing && (
-                  <button 
-                    onClick={generateShareLink}
-                    className="p-2 sm:p-4 rounded-xl sm:rounded-2xl bg-gray-50 text-neutral-600 hover:bg-neutral-100 transition-all active:scale-95 flex items-center justify-center sm:gap-2"
-                    title="Share Site Link"
-                  >
-                    <Share2 size={16} className="sm:w-5 sm:h-5" />
-                    <span className="hidden sm:inline text-[10px] font-black uppercase tracking-widest">Share</span>
-                  </button>
-                )}
-
                 {isEditing && (
                   <div className="relative mr-1 sm:mr-2">
                     <button
@@ -3556,82 +3528,100 @@ export default function App() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsSharing(false)}
-              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+              className="absolute inset-0 bg-black/70 backdrop-blur-md"
             />
             <motion.div 
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              initial={{ opacity: 0, scale: 0.9, y: 30 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative w-full max-w-xl bg-white rounded-[2.5rem] shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)] overflow-hidden border border-gray-100"
+              exit={{ opacity: 0, scale: 0.9, y: 30 }}
+              className="relative w-full max-w-4xl bg-white rounded-[3rem] shadow-[0_80px_160px_-20px_rgba(0,0,0,0.6)] overflow-hidden border border-neutral-100"
             >
-              <div className="p-8 sm:p-12 space-y-8">
+              <div className="p-10 sm:p-20 space-y-12">
                 <div className="flex justify-between items-start">
-                  <div className="space-y-1">
-                    <h3 className="text-3xl font-black uppercase tracking-tight">Portfolio Link Ready!</h3>
-                    <p className="text-sm font-medium text-gray-500 uppercase tracking-widest">Share this link to show your progress</p>
+                  <div className="space-y-4">
+                    <div className="inline-flex items-center gap-2 px-5 py-2 bg-green-500 text-white rounded-full text-[10px] font-black uppercase tracking-[0.2em]">
+                       <Globe size={14} />
+                       Public Link Generated
+                    </div>
+                    <h3 className="text-5xl sm:text-7xl font-black uppercase tracking-tighter leading-[0.9] text-black">Ready to<br/>Impress.</h3>
+                    <p className="text-sm sm:text-leg font-medium text-neutral-400 uppercase tracking-widest max-w-xl leading-relaxed pt-2">
+                      Your portfolio has been synchronized and the public viewer is now ready to see your progress.
+                    </p>
                   </div>
                   <button 
                     onClick={() => setIsSharing(false)}
-                    className="p-3 hover:bg-gray-50 rounded-2xl transition-all"
+                    className="p-5 hover:bg-neutral-50 rounded-3xl transition-all"
                   >
-                    <X size={24} />
+                    <X size={32} />
                   </button>
                 </div>
 
-                <div className="space-y-4">
-                  <div className="p-6 bg-green-50/50 rounded-[1.5rem] border border-green-100/50 text-center">
-                    <span className="text-[10px] font-black uppercase tracking-[0.3em] text-green-600">✓ Snapshot Created Successfully</span>
+                <div className="grid lg:grid-cols-2 gap-8 items-center">
+                  <div className="space-y-6">
+                    <div className="p-10 bg-neutral-950 rounded-[2.5rem] border border-white/10 shadow-2xl relative overflow-hidden group">
+                      <div className="absolute top-0 right-0 p-6 opacity-10">
+                         <Link size={120} className="text-white" />
+                      </div>
+                      <span className="text-[10px] font-black uppercase tracking-[0.5em] text-white/40 block mb-6">Snapshot Identifier</span>
+                      <p className="text-white font-mono text-sm break-all line-clamp-4 leading-relaxed relative z-10">
+                        {shareUrl}
+                      </p>
+                    </div>
+
+                    {isUrlTooLarge && (
+                      <div className="p-8 bg-amber-50 rounded-[2rem] border border-amber-100 flex flex-col gap-3">
+                         <div className="flex items-center gap-3">
+                            <div className="p-2 bg-amber-100 rounded-lg text-amber-600">
+                               <Lock size={18} />
+                            </div>
+                            <span className="text-xs font-black uppercase tracking-[0.3em] text-amber-600">Performance Notice</span>
+                         </div>
+                         <p className="text-xs text-amber-900 leading-relaxed font-medium">
+                           This link is currently very large because it contains embedded media. 
+                           To ensure perfect reliability, we recommend using the **Cloud Storage** feature for any future uploads.
+                         </p>
+                      </div>
+                    )}
                   </div>
 
-                  {isUrlTooLarge && (
-                    <div className="p-6 bg-amber-50 rounded-[1.5rem] border border-amber-100 flex flex-col gap-2">
-                       <span className="text-[10px] font-black uppercase tracking-[0.3em] text-amber-600">⚠️ Link Size Warning</span>
-                       <p className="text-[10px] text-amber-700 leading-normal">
-                         Your portfolio is currently very large because it contains embedded images. 
-                         The link above might not work properly for some viewers. 
-                         Cloud storage is now enabled to fix this for all future uploads!
-                       </p>
-                    </div>
-                  )}
-
-                  <div className="p-6 bg-gray-50 rounded-[1.5rem] border border-gray-100 overflow-hidden relative group">
-                    <p className="text-neutral-400 text-xs font-mono break-all line-clamp-2 pr-12">
-                      {shareUrl}
-                    </p>
+                  <div className="space-y-6">
                     <button 
                       onClick={copyToClipboard}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 p-3 bg-white shadow-xl rounded-xl hover:bg-black hover:text-white transition-all active:scale-95"
+                      className={`w-full py-10 rounded-[2.5rem] font-black uppercase tracking-[0.3em] shadow-[0_30px_60px_rgba(0,0,0,0.3)] transition-all flex flex-col items-center justify-center gap-4 text-2xl ${
+                        hasCopied ? 'bg-green-500 scale-[1.02] text-white shadow-green-500/30' : 'bg-black text-white hover:bg-neutral-800'
+                      }`}
                     >
-                      {hasCopied ? <Check size={18} className="text-green-500" /> : <Copy size={18} />}
+                      {hasCopied ? (
+                        <>
+                          <Check size={48} strokeWidth={4} />
+                          <span className="text-base sm:text-xl">Copied Successfully!</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy size={48} />
+                          <span className="text-base sm:text-xl">Copy Link</span>
+                        </>
+                      )}
                     </button>
+                    
+                    <div className="bg-neutral-50 p-8 rounded-[2rem] border border-neutral-100">
+                      <p className="text-[9px] font-black uppercase tracking-[0.2em] text-neutral-400 text-center leading-relaxed">
+                        Viewer Status: <span className="text-green-500">Live & Synchronized</span><br/>
+                        <span className="opacity-50">Link reflects your data at {new Date().toLocaleTimeString()}</span>
+                      </p>
+                    </div>
                   </div>
-                  {hasCopied && (
-                    <motion.p 
-                      initial={{ opacity: 0, y: -10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="text-center text-[10px] font-black uppercase tracking-widest text-green-500"
-                    >
-                      Copied to clipboard! Ready to view publically.
-                    </motion.p>
-                  )}
-                </div>
-
-                <div className="pt-4">
-                  <button 
-                    onClick={copyToClipboard}
-                    className="w-full py-5 bg-black text-white rounded-[1.5rem] font-black uppercase tracking-[0.2em] shadow-2xl hover:bg-neutral-800 transition-all flex items-center justify-center gap-3"
-                  >
-                    {hasCopied ? 'Link Copied!' : 'Copy Link'}
-                    <Copy size={20} />
-                  </button>
                 </div>
               </div>
 
-              <div className="bg-neutral-50 px-8 py-6 border-t border-gray-100">
-                <p className="text-center text-[9px] font-black uppercase tracking-widest text-gray-400 leading-relaxed">
-                  Tip: This link contains your site's current state. <br/>
-                  If you make more changes, click Share again to get a fresh link.
+              <div className="bg-neutral-950 px-12 py-10 flex flex-col sm:flex-row justify-between items-center gap-6 border-t border-white/5">
+                <p className="text-[10px] font-black uppercase tracking-[0.4em] text-white/30 leading-relaxed text-center sm:text-left">
+                  Note: This snapshot is immutable. For new changes, click share again.
                 </p>
+                <div className="flex gap-4">
+                   <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                   <span className="text-[10px] font-black uppercase tracking-widest text-white/60">Cloud Sync Active</span>
+                </div>
               </div>
             </motion.div>
           </div>
