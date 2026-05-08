@@ -8,9 +8,22 @@ export type SectionId =
   | 'achievements'
   | 'seminars'
   | 'department-background'
+  | 'premises'
+  | 'logo'
+  | 'intro-history'
+  | 'mission-vision'
+  | 'org-structure'
   | 'subject-teachers'
+  | 'subjects-taught'
+  | 'message-teachers'
   | 'subject-inclusions'
-  | 'appendices';
+  | 'quizzes'
+  | 'activities'
+  | 'lesson-plan'
+  | 'instructional-materials'
+  | 'appendices'
+  | 'extracurricular'
+  | 'evidence';
 
 export interface ContentBlock {
   id: string;
@@ -94,6 +107,7 @@ export interface TitlePageData {
 export interface Section {
   id: SectionId;
   label: string;
+  subItems?: { id: SectionId; label: string }[];
 }
 
 export interface AppSettings {
@@ -106,8 +120,49 @@ export interface AppSettings {
 }
 
 export const SECTIONS: Section[] = [
-  { id: 'title-page', label: 'Title Page' },
-  { id: 'cover-page', label: 'Cover Page' },
-  { id: 'acknowledgment', label: 'Acknowledgment' },
-  { id: 'dedication', label: 'Dedication' },
+  { id: 'title-page', label: '1. Title Page' },
+  { id: 'cover-page', label: '2. Cover Page' },
+  { id: 'acknowledgment', label: '4. Acknowledgment' },
+  { id: 'dedication', label: '5. Dedication' },
+  { id: 'personal-philosophy', label: '6. Personal Educational Philosophy' },
+  { id: 'cv', label: '7. Curriculum Vitae' },
+  { id: 'achievements', label: '8. Achievements and Accomplishments' },
+  { id: 'seminars', label: '9. Seminars Attended' },
+  { 
+    id: 'department-background', 
+    label: '10. Department Background',
+    subItems: [
+      { id: 'premises', label: 'Premises' },
+      { id: 'logo', label: 'Logo' },
+      { id: 'intro-history', label: 'Introduction/History of the College' },
+      { id: 'mission-vision', label: 'Institutional Mission, Vision, and Core Values' },
+      { id: 'org-structure', label: 'Organizational Structure' }
+    ]
+  },
+  { 
+    id: 'subject-teachers', 
+    label: '11. Subject Teachers',
+    subItems: [
+      { id: 'subjects-taught', label: 'Subjects Taught' },
+      { id: 'message-teachers', label: 'Message to Each Teacher' }
+    ]
+  },
+  { 
+    id: 'subject-inclusions', 
+    label: '12. Subject Inclusions',
+    subItems: [
+      { id: 'quizzes', label: 'Quizzes' },
+      { id: 'activities', label: 'Activities' },
+      { id: 'lesson-plan', label: 'Lesson Plan' },
+      { id: 'instructional-materials', label: 'Instructional Materials' }
+    ]
+  },
+  { 
+    id: 'appendices', 
+    label: '13. Appendices',
+    subItems: [
+      { id: 'extracurricular', label: 'Extracurricular Activities' },
+      { id: 'evidence', label: 'Evidence (labeled pictures)' }
+    ]
+  },
 ];

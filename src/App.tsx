@@ -75,6 +75,13 @@ const DEFAULT_DEDICATION: BasicSectionData = {
   alignment: 'center'
 };
 
+const DEFAULT_GENERIC_SECTION: BasicSectionData = {
+  content: "Start writing your content here...",
+  blocks: [],
+  layoutOrder: ['sys-header', 'sys-divider', 'sys-content'],
+  alignment: 'center'
+};
+
 const DEFAULT_COVER_DATA: CoverPageData = {
   heroMedia: { type: 'image', url: '' },
   heroName: 'Zandel Ragay',
@@ -116,9 +123,101 @@ const DEFAULT_TITLE_DATA: TitlePageData = {
 
 const AlignmentIcon = ({ alignment }: { alignment: 'left' | 'center' | 'right' }) => {
   if (alignment === 'left') return <AlignLeft size={16} />;
-  if (alignment === 'center') return <AlignCenter size={16} />;
-  return <AlignRight size={16} />;
+  if (alignment === 'right') return <AlignRight size={16} />;
+  return <AlignCenter size={16} />;
 };
+
+const NavSectionItem = ({ 
+  section, 
+  isActive, 
+  onNavigate,
+  isSidebar = false
+}: { 
+  section: any, 
+  isActive: boolean, 
+  onNavigate: (id: SectionId) => void,
+  isSidebar?: boolean,
+  key?: string | number
+}) => {
+  const [isHovered, setIsHovered] = useState(false);
+
+  return (
+    <div 
+      className="relative w-full"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      onTouchStart={() => setIsHovered(true)}
+    >
+      <button
+        onClick={() => {
+          onNavigate(section.id);
+          if (!section.subItems) setIsHovered(false);
+        }}
+        className={`w-full flex items-center justify-between transition-all duration-300 ${
+          isSidebar 
+            ? `px-10 py-6 rounded-[2.5rem] ${isActive ? 'bg-black text-white shadow-xl scale-[1.02]' : 'hover:bg-gray-50 text-gray-400 hover:text-black'}`
+            : `px-4 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest ${isActive ? 'bg-black text-white' : 'hover:bg-gray-50 text-gray-500'}`
+        }`}
+      >
+        <div className="flex items-center gap-4 sm:gap-8">
+          {isSidebar && (
+            <span className={`text-xs font-black tabular-nums opacity-20 ${isActive ? 'text-white' : ''}`}>
+               {section.label.match(/^\d+/)?.[0].padStart(2, '0') || '00'}
+            </span>
+          )}
+          <span className={`${isSidebar ? 'font-black text-xl md:text-2xl tracking-tighter uppercase' : ''}`}>
+            {isSidebar ? section.label.replace(/^\d+\.\s*/, '') : section.label}
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+           {section.subItems && (
+            <motion.div
+              animate={{ rotate: isHovered ? 90 : 0 }}
+              transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+              className={isActive ? 'text-white/40' : 'text-black/20'}
+            >
+              <ChevronRight size={isSidebar ? 20 : 12} />
+            </motion.div>
+          )}
+          {isActive && !section.subItems && <Star size={isSidebar ? 14 : 10} fill="currentColor" />}
+        </div>
+      </button>
+
+      <AnimatePresence>
+        {section.subItems && isHovered && (
+          <motion.div
+            initial={{ height: 0, opacity: 0, y: -10 }}
+            animate={{ height: 'auto', opacity: 1, y: 0 }}
+            exit={{ height: 0, opacity: 0, y: -10 }}
+            transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+            className={`overflow-hidden rounded-2xl mt-1 border-l-2 ${
+              isActive ? 'bg-white/5 border-white/20' : 'bg-gray-50 border-black/5'
+            } ${isSidebar ? 'ml-12' : 'ml-4'}`}
+          >
+            <div className="py-2 space-y-1">
+              {section.subItems.map((sub: { id: SectionId; label: string }, idx: number) => (
+                <button 
+                  key={idx}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onNavigate(sub.id);
+                    setIsHovered(false);
+                  }}
+                  className={`w-full text-left px-6 py-2 font-bold uppercase tracking-widest transition-colors ${
+                    isSidebar ? 'text-xs opacity-60 hover:opacity-100' : 'text-[7px] opacity-40 hover:opacity-80'
+                  } ${isActive ? 'text-white' : 'text-black'}`}
+                >
+                  • {sub.label}
+                </button>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
 
 
 const RenderMedia = ({ type, url, className }: { type: 'image' | 'spline' | 'url', url: string, className?: string }) => {
@@ -1063,11 +1162,85 @@ export default function App() {
   const [academicCoverData, setAcademicCoverData] = useState<CoverPageSectionData>(DEFAULT_ACADEMIC_COVER);
   const [acknowledgement, setAcknowledgement] = useState<BasicSectionData>(DEFAULT_ACKNOWLEDGEMENT);
   const [dedication, setDedication] = useState<BasicSectionData>(DEFAULT_DEDICATION);
+  const [philosophy, setPhilosophy] = useState<BasicSectionData>(DEFAULT_GENERIC_SECTION);
+  const [cv, setCV] = useState<BasicSectionData>(DEFAULT_GENERIC_SECTION);
+  const [achievements, setAchievements] = useState<BasicSectionData>(DEFAULT_GENERIC_SECTION);
+  const [seminars, setSeminars] = useState<BasicSectionData>(DEFAULT_GENERIC_SECTION);
+  const [deptBackground, setDeptBackground] = useState<BasicSectionData>(DEFAULT_GENERIC_SECTION);
+  const [teachers, setTeachers] = useState<BasicSectionData>(DEFAULT_GENERIC_SECTION);
+  const [inclusions, setInclusions] = useState<BasicSectionData>(DEFAULT_GENERIC_SECTION);
+  const [appendices, setAppendices] = useState<BasicSectionData>(DEFAULT_GENERIC_SECTION);
+
+  const [extracurricular, setExtracurricular] = useState<BasicSectionData>(DEFAULT_GENERIC_SECTION);
+  const [evidence, setEvidence] = useState<BasicSectionData>(DEFAULT_GENERIC_SECTION);
+  const [premises, setPremises] = useState<BasicSectionData>(DEFAULT_GENERIC_SECTION);
+  const [logo, setLogo] = useState<BasicSectionData>(DEFAULT_GENERIC_SECTION);
+  const [introHistory, setIntroHistory] = useState<BasicSectionData>(DEFAULT_GENERIC_SECTION);
+  const [missionVision, setMissionVision] = useState<BasicSectionData>(DEFAULT_GENERIC_SECTION);
+  const [orgStructure, setOrgStructure] = useState<BasicSectionData>(DEFAULT_GENERIC_SECTION);
+  const [subjectsTaught, setSubjectsTaught] = useState<BasicSectionData>(DEFAULT_GENERIC_SECTION);
+  const [messageTeachers, setMessageTeachers] = useState<BasicSectionData>(DEFAULT_GENERIC_SECTION);
+  const [quizzes, setQuizzes] = useState<BasicSectionData>(DEFAULT_GENERIC_SECTION);
+  const [activities, setActivities] = useState<BasicSectionData>(DEFAULT_GENERIC_SECTION);
+  const [lessonPlan, setLessonPlan] = useState<BasicSectionData>(DEFAULT_GENERIC_SECTION);
+  const [instructionalMaterials, setInstructionalMaterials] = useState<BasicSectionData>(DEFAULT_GENERIC_SECTION);
+
   const [editingData, setEditingData] = useState<TitlePageData>(DEFAULT_TITLE_DATA);
   const [editingCoverData, setEditingCoverData] = useState<CoverPageData>(DEFAULT_COVER_DATA);
   const [editingAcademicCoverData, setEditingAcademicCoverData] = useState<CoverPageSectionData>(DEFAULT_ACADEMIC_COVER);
   const [editingAcknowledgement, setEditingAcknowledgement] = useState<BasicSectionData>(DEFAULT_ACKNOWLEDGEMENT);
   const [editingDedication, setEditingDedication] = useState<BasicSectionData>(DEFAULT_DEDICATION);
+  const [editingPhilosophy, setEditingPhilosophy] = useState<BasicSectionData>(DEFAULT_GENERIC_SECTION);
+  const [editingCV, setEditingCV] = useState<BasicSectionData>(DEFAULT_GENERIC_SECTION);
+  const [editingAchievements, setEditingAchievements] = useState<BasicSectionData>(DEFAULT_GENERIC_SECTION);
+  const [editingSeminars, setEditingSeminars] = useState<BasicSectionData>(DEFAULT_GENERIC_SECTION);
+  const [editingDeptBackground, setEditingDeptBackground] = useState<BasicSectionData>(DEFAULT_GENERIC_SECTION);
+  const [editingTeachers, setEditingTeachers] = useState<BasicSectionData>(DEFAULT_GENERIC_SECTION);
+  const [editingInclusions, setEditingInclusions] = useState<BasicSectionData>(DEFAULT_GENERIC_SECTION);
+  const [editingAppendices, setEditingAppendices] = useState<BasicSectionData>(DEFAULT_GENERIC_SECTION);
+  const [editingExtracurricular, setEditingExtracurricular] = useState<BasicSectionData>(DEFAULT_GENERIC_SECTION);
+  const [editingEvidence, setEditingEvidence] = useState<BasicSectionData>(DEFAULT_GENERIC_SECTION);
+  const [editingPremises, setEditingPremises] = useState<BasicSectionData>(DEFAULT_GENERIC_SECTION);
+  const [editingLogo, setEditingLogo] = useState<BasicSectionData>(DEFAULT_GENERIC_SECTION);
+  const [editingIntroHistory, setEditingIntroHistory] = useState<BasicSectionData>(DEFAULT_GENERIC_SECTION);
+  const [editingMissionVision, setEditingMissionVision] = useState<BasicSectionData>(DEFAULT_GENERIC_SECTION);
+  const [editingOrgStructure, setEditingOrgStructure] = useState<BasicSectionData>(DEFAULT_GENERIC_SECTION);
+  const [editingSubjectsTaught, setEditingSubjectsTaught] = useState<BasicSectionData>(DEFAULT_GENERIC_SECTION);
+  const [editingMessageTeachers, setEditingMessageTeachers] = useState<BasicSectionData>(DEFAULT_GENERIC_SECTION);
+  const [editingQuizzes, setEditingQuizzes] = useState<BasicSectionData>(DEFAULT_GENERIC_SECTION);
+  const [editingActivities, setEditingActivities] = useState<BasicSectionData>(DEFAULT_GENERIC_SECTION);
+  const [editingLessonPlan, setEditingLessonPlan] = useState<BasicSectionData>(DEFAULT_GENERIC_SECTION);
+  const [editingInstructionalMaterials, setEditingInstructionalMaterials] = useState<BasicSectionData>(DEFAULT_GENERIC_SECTION);
+
+  const getSectionState = (id: SectionId) => {
+    if (id === 'personal-philosophy') return [philosophy, setPhilosophy, editingPhilosophy, setEditingPhilosophy, 'portfolio_philosophy'] as const;
+    if (id === 'cv') return [cv, setCV, editingCV, setEditingCV, 'portfolio_cv'] as const;
+    if (id === 'achievements') return [achievements, setAchievements, editingAchievements, setEditingAchievements, 'portfolio_achievements'] as const;
+    if (id === 'seminars') return [seminars, setSeminars, editingSeminars, setEditingSeminars, 'portfolio_seminars'] as const;
+    if (id === 'department-background') return [deptBackground, setDeptBackground, editingDeptBackground, setEditingDeptBackground, 'portfolio_dept_background'] as const;
+    if (id === 'subject-teachers') return [teachers, setTeachers, editingTeachers, setEditingTeachers, 'portfolio_teachers'] as const;
+    if (id === 'subject-inclusions') return [inclusions, setInclusions, editingInclusions, setEditingInclusions, 'portfolio_inclusions'] as const;
+    if (id === 'appendices') return [appendices, setAppendices, editingAppendices, setEditingAppendices, 'portfolio_appendices'] as const;
+    if (id === 'acknowledgment') return [acknowledgement, setAcknowledgement, editingAcknowledgement, setEditingAcknowledgement, 'portfolio_acknowledgement'] as const;
+    if (id === 'dedication') return [dedication, setDedication, editingDedication, setEditingDedication, 'portfolio_dedication'] as const;
+    
+    if (id === 'premises') return [premises, setPremises, editingPremises, setEditingPremises, 'portfolio_premises'] as const;
+    if (id === 'logo') return [logo, setLogo, editingLogo, setEditingLogo, 'portfolio_logo'] as const;
+    if (id === 'intro-history') return [introHistory, setIntroHistory, editingIntroHistory, setEditingIntroHistory, 'portfolio_intro_history'] as const;
+    if (id === 'mission-vision') return [missionVision, setMissionVision, editingMissionVision, setEditingMissionVision, 'portfolio_mission_vision'] as const;
+    if (id === 'org-structure') return [orgStructure, setOrgStructure, editingOrgStructure, setEditingOrgStructure, 'portfolio_org_structure'] as const;
+    if (id === 'subjects-taught') return [subjectsTaught, setSubjectsTaught, editingSubjectsTaught, setEditingSubjectsTaught, 'portfolio_subjects_taught'] as const;
+    if (id === 'message-teachers') return [messageTeachers, setMessageTeachers, editingMessageTeachers, setEditingMessageTeachers, 'portfolio_message_teachers'] as const;
+    if (id === 'quizzes') return [quizzes, setQuizzes, editingQuizzes, setEditingQuizzes, 'portfolio_quizzes'] as const;
+    if (id === 'activities') return [activities, setActivities, editingActivities, setEditingActivities, 'portfolio_activities'] as const;
+    if (id === 'lesson-plan') return [lessonPlan, setLessonPlan, editingLessonPlan, setEditingLessonPlan, 'portfolio_lesson_plan'] as const;
+    if (id === 'instructional-materials') return [instructionalMaterials, setInstructionalMaterials, editingInstructionalMaterials, setEditingInstructionalMaterials, 'portfolio_instr_mat'] as const;
+    if (id === 'extracurricular') return [extracurricular, setExtracurricular, editingExtracurricular, setEditingExtracurricular, 'portfolio_extracurricular'] as const;
+    if (id === 'evidence') return [evidence, setEvidence, editingEvidence, setEditingEvidence, 'portfolio_evidence'] as const;
+    
+    return null;
+  };
+
   const [appSettings, setAppSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
   const [editingAppSettings, setEditingAppSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
   const [isEditing, setIsEditing] = useState(false);
@@ -1156,6 +1329,29 @@ export default function App() {
             setDedication(parsed.dedication);
             setEditingDedication(parsed.dedication);
           }
+          if (parsed.philosophy) { setPhilosophy(parsed.philosophy); setEditingPhilosophy(parsed.philosophy); }
+          if (parsed.cv) { setCV(parsed.cv); setEditingCV(parsed.cv); }
+          if (parsed.achievements) { setAchievements(parsed.achievements); setEditingAchievements(parsed.achievements); }
+          if (parsed.seminars) { setSeminars(parsed.seminars); setEditingSeminars(parsed.seminars); }
+          if (parsed.deptBackground) { setDeptBackground(parsed.deptBackground); setEditingDeptBackground(parsed.deptBackground); }
+          if (parsed.teachers) { setTeachers(parsed.teachers); setEditingTeachers(parsed.teachers); }
+          if (parsed.inclusions) { setInclusions(parsed.inclusions); setEditingInclusions(parsed.inclusions); }
+          if (parsed.appendices) { setAppendices(parsed.appendices); setEditingAppendices(parsed.appendices); }
+
+          if (parsed.premises) { setPremises(parsed.premises); setEditingPremises(parsed.premises); }
+          if (parsed.logo) { setLogo(parsed.logo); setEditingLogo(parsed.logo); }
+          if (parsed.introHistory) { setIntroHistory(parsed.introHistory); setEditingIntroHistory(parsed.introHistory); }
+          if (parsed.missionVision) { setMissionVision(parsed.missionVision); setEditingMissionVision(parsed.missionVision); }
+          if (parsed.orgStructure) { setOrgStructure(parsed.orgStructure); setEditingOrgStructure(parsed.orgStructure); }
+          if (parsed.subjectsTaught) { setSubjectsTaught(parsed.subjectsTaught); setEditingSubjectsTaught(parsed.subjectsTaught); }
+          if (parsed.messageTeachers) { setMessageTeachers(parsed.messageTeachers); setEditingMessageTeachers(parsed.messageTeachers); }
+          if (parsed.quizzes) { setQuizzes(parsed.quizzes); setEditingQuizzes(parsed.quizzes); }
+          if (parsed.activities) { setActivities(parsed.activities); setEditingActivities(parsed.activities); }
+          if (parsed.lessonPlan) { setLessonPlan(parsed.lessonPlan); setEditingLessonPlan(parsed.lessonPlan); }
+          if (parsed.instructionalMaterials) { setInstructionalMaterials(parsed.instructionalMaterials); setEditingInstructionalMaterials(parsed.instructionalMaterials); }
+          if (parsed.extracurricular) { setExtracurricular(parsed.extracurricular); setEditingExtracurricular(parsed.extracurricular); }
+          if (parsed.evidence) { setEvidence(parsed.evidence); setEditingEvidence(parsed.evidence); }
+
           if (parsed.appSettings) {
             setAppSettings(parsed.appSettings);
             setEditingAppSettings(parsed.appSettings);
@@ -1234,39 +1430,29 @@ export default function App() {
       }
     }
 
-    const savedAck = localStorage.getItem('portfolio_acknowledgement');
-    if (savedAck) {
-      try {
-        if (savedAck.includes('[object Object]')) throw new Error('Sanitize object string');
-        const parsed = JSON.parse(savedAck);
-        if (!parsed.layoutOrder) {
-          parsed.layoutOrder = ['sys-header', 'sys-divider', 'sys-content', ...(parsed.blocks || []).map((b: any) => b.id)];
+    ['acknowledgment', 'dedication', 'personal-philosophy', 'cv', 'achievements', 'seminars', 'department-background', 'subject-teachers', 'subject-inclusions', 'appendices',
+     'premises', 'logo', 'intro-history', 'mission-vision', 'org-structure', 'subjects-taught', 'message-teachers', 'quizzes', 'activities', 'lesson-plan', 'instructional-materials', 'extracurricular', 'evidence'].forEach(id => {
+      const saved = localStorage.getItem(getSectionState(id as SectionId)?.[4] || '');
+      if (saved) {
+        try {
+          if (saved.includes('[object Object]')) throw new Error('Sanitize object string');
+          const parsed = JSON.parse(saved);
+          if (!parsed.layoutOrder) {
+            parsed.layoutOrder = ['sys-header', 'sys-divider', 'sys-content', ...(parsed.blocks || []).map((b: any) => b.id)];
+          }
+          const defaultData = id === 'acknowledgment' ? DEFAULT_ACKNOWLEDGEMENT : id === 'dedication' ? DEFAULT_DEDICATION : DEFAULT_GENERIC_SECTION;
+          const merged = { ...defaultData, ...parsed };
+          const state = getSectionState(id as SectionId);
+          if (state) {
+            state[1](merged);
+            state[3](merged);
+          }
+        } catch (e) {
+          console.error(`Failed to parse ${id} data`, e);
         }
-        const merged = { ...DEFAULT_ACKNOWLEDGEMENT, ...parsed };
-        setAcknowledgement(merged);
-        setEditingAcknowledgement(merged);
-      } catch (e) {
-        setAcknowledgement(DEFAULT_ACKNOWLEDGEMENT);
-        setEditingAcknowledgement(DEFAULT_ACKNOWLEDGEMENT);
       }
-    }
+    });
 
-    const savedDed = localStorage.getItem('portfolio_dedication');
-    if (savedDed) {
-      try {
-        if (savedDed.includes('[object Object]')) throw new Error('Sanitize object string');
-        const parsed = JSON.parse(savedDed);
-        if (!parsed.layoutOrder) {
-          parsed.layoutOrder = ['sys-header', 'sys-divider', 'sys-content', ...(parsed.blocks || []).map((b: any) => b.id)];
-        }
-        const merged = { ...DEFAULT_DEDICATION, ...parsed };
-        setDedication(merged);
-        setEditingDedication(merged);
-      } catch (e) {
-        setDedication(DEFAULT_DEDICATION);
-        setEditingDedication(DEFAULT_DEDICATION);
-      }
-    }
     const savedSettings = localStorage.getItem(SETTINGS_STORAGE_KEY);
     if (savedSettings) {
       try {
@@ -1304,13 +1490,16 @@ export default function App() {
       setAcademicCoverData(editingAcademicCoverData);
       localStorage.setItem(NEW_COVER_SECTION_KEY, JSON.stringify(editingAcademicCoverData));
       
-      // Save Acknowledgement
-      setAcknowledgement(editingAcknowledgement);
-      localStorage.setItem('portfolio_acknowledgement', JSON.stringify(editingAcknowledgement));
-      
-      // Save Dedication
-      setDedication(editingDedication);
-      localStorage.setItem('portfolio_dedication', JSON.stringify(editingDedication));
+      // Save All Basic Sections
+      ['acknowledgment', 'dedication', 'personal-philosophy', 'cv', 'achievements', 'seminars', 'department-background', 'subject-teachers', 'subject-inclusions', 'appendices', 
+       'premises', 'logo', 'intro-history', 'mission-vision', 'org-structure', 'subjects-taught', 'message-teachers', 'quizzes', 'activities', 'lesson-plan', 'instructional-materials', 'extracurricular', 'evidence'].forEach(id => {
+        const state = getSectionState(id as SectionId);
+        if (state) {
+          const [val, setVal, editVal, setEditVal, key] = state;
+          setVal(editVal);
+          localStorage.setItem(key, JSON.stringify(editVal));
+        }
+      });
 
       // Save Settings
       setAppSettings(editingAppSettings);
@@ -1333,21 +1522,50 @@ export default function App() {
   const handleCancel = () => {
     setEditingData(titlePageData);
     setEditingAcademicCoverData(academicCoverData);
-    setEditingAcknowledgement(acknowledgement);
-    setEditingDedication(dedication);
-    setEditingAppSettings(appSettings);
     setEditingCoverData(coverPageData);
+    setEditingAppSettings(appSettings);
+    
+    ['acknowledgment', 'dedication', 'personal-philosophy', 'cv', 'achievements', 'seminars', 'department-background', 'subject-teachers', 'subject-inclusions', 'appendices',
+     'premises', 'logo', 'intro-history', 'mission-vision', 'org-structure', 'subjects-taught', 'message-teachers', 'quizzes', 'activities', 'lesson-plan', 'instructional-materials', 'extracurricular', 'evidence'].forEach(id => {
+      const state = getSectionState(id as SectionId);
+      if (state) {
+        const [val, setVal, editVal, setEditVal] = state;
+        setEditVal(val);
+      }
+    });
+
     setIsEditing(false);
     setHasUnlocked(false);
   };
 
   const generateShareLink = () => {
-    const allData = {
+    const allData: any = {
       titlePage: titlePageData,
       coverPage: coverPageData,
       academicCover: academicCoverData,
       acknowledgement: acknowledgement,
       dedication: dedication,
+      philosophy: philosophy,
+      cv: cv,
+      achievements: achievements,
+      seminars: seminars,
+      deptBackground: deptBackground,
+      teachers: teachers,
+      inclusions: inclusions,
+      appendices: appendices,
+      premises: premises,
+      logo: logo,
+      introHistory: introHistory,
+      missionVision: missionVision,
+      orgStructure: orgStructure,
+      subjectsTaught: subjectsTaught,
+      messageTeachers: messageTeachers,
+      quizzes: quizzes,
+      activities: activities,
+      lessonPlan: lessonPlan,
+      instructionalMaterials: instructionalMaterials,
+      extracurricular: extracurricular,
+      evidence: evidence,
       appSettings: appSettings
     };
 
@@ -1401,18 +1619,16 @@ export default function App() {
         blocks: [...(prev.blocks || []), newBlock],
         layoutOrder: [...prev.layoutOrder, blockId]
       }));
-    } else if (currentSection === 'acknowledgment') {
-      setEditingAcknowledgement(prev => ({ 
-        ...prev, 
-        blocks: [...(prev.blocks || []), newBlock],
-        layoutOrder: [...prev.layoutOrder, blockId]
-      }));
-    } else if (currentSection === 'dedication') {
-      setEditingDedication(prev => ({ 
-        ...prev, 
-        blocks: [...(prev.blocks || []), newBlock],
-        layoutOrder: [...prev.layoutOrder, blockId]
-      }));
+    } else {
+      const state = getSectionState(currentSection);
+      if (state) {
+        const [val, setVal, editVal, setEditVal] = state;
+        setEditVal(prev => ({ 
+          ...prev, 
+          blocks: [...(prev.blocks || []), newBlock],
+          layoutOrder: [...prev.layoutOrder, blockId]
+        }));
+      }
     }
     
     setTimeout(() => {
@@ -1431,16 +1647,15 @@ export default function App() {
         ...prev,
         blocks: (prev.blocks || []).map(b => b.id === id ? { ...b, ...updates } : b)
       }));
-    } else if (currentSection === 'acknowledgment') {
-      setEditingAcknowledgement(prev => ({
-        ...prev,
-        blocks: (prev.blocks || []).map(b => b.id === id ? { ...b, ...updates } : b)
-      }));
-    } else if (currentSection === 'dedication') {
-      setEditingDedication(prev => ({
-        ...prev,
-        blocks: (prev.blocks || []).map(b => b.id === id ? { ...b, ...updates } : b)
-      }));
+    } else {
+      const state = getSectionState(currentSection);
+      if (state) {
+        const [val, setVal, editVal, setEditVal] = state;
+        setEditVal(prev => ({
+          ...prev,
+          blocks: (prev.blocks || []).map(b => b.id === id ? { ...b, ...updates } : b)
+        }));
+      }
     }
   };
 
@@ -1457,18 +1672,16 @@ export default function App() {
         blocks: (prev.blocks || []).filter(b => b.id !== id),
         layoutOrder: prev.layoutOrder.filter(itemId => itemId !== id)
       }));
-    } else if (currentSection === 'acknowledgment') {
-      setEditingAcknowledgement(prev => ({ 
-        ...prev, 
-        blocks: (prev.blocks || []).filter(b => b.id !== id),
-        layoutOrder: prev.layoutOrder.filter(itemId => itemId !== id)
-      }));
-    } else if (currentSection === 'dedication') {
-      setEditingDedication(prev => ({ 
-        ...prev, 
-        blocks: (prev.blocks || []).filter(b => b.id !== id),
-        layoutOrder: prev.layoutOrder.filter(itemId => itemId !== id)
-      }));
+    } else {
+      const state = getSectionState(currentSection);
+      if (state) {
+        const [val, setVal, editVal, setEditVal] = state;
+        setEditVal(prev => ({ 
+          ...prev, 
+          blocks: (prev.blocks || []).filter(b => b.id !== id),
+          layoutOrder: prev.layoutOrder.filter(itemId => itemId !== id)
+        }));
+      }
     }
   };
 
@@ -1502,10 +1715,12 @@ export default function App() {
 
         if (currentSection === 'cover-page') {
           setEditingAcademicCoverData(prev => handleReorder(prev));
-        } else if (currentSection === 'acknowledgment') {
-          setEditingAcknowledgement(prev => handleReorder(prev));
-        } else if (currentSection === 'dedication') {
-          setEditingDedication(prev => handleReorder(prev));
+        } else {
+          const state = getSectionState(currentSection);
+          if (state) {
+            const [val, setVal, editVal, setEditVal] = state;
+            setEditVal(prev => handleReorder(prev));
+          }
         }
       }
     }
@@ -1754,21 +1969,15 @@ export default function App() {
                             >
                               <div className="p-2 space-y-1">
                                 {SECTIONS.map(s => (
-                                  <button
+                                  <NavSectionItem
                                     key={s.id}
-                                    onClick={() => {
-                                      navigateTo(s.id);
+                                    section={s}
+                                    isActive={(currentSection === s.id && view === 'view2') || (s.id === 'title-page' && view === 'view1') || s.subItems?.some(sub => sub.id === currentSection) === true}
+                                    onNavigate={(id) => {
+                                      navigateTo(id);
                                       setIsPagesMenuOpen(false);
                                     }}
-                                    className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
-                                      (currentSection === s.id && view === 'view2') || (s.id === 'title-page' && view === 'view1')
-                                        ? 'bg-black text-white' 
-                                        : 'hover:bg-gray-50 text-gray-500'
-                                    }`}
-                                  >
-                                    {s.label}
-                                    {(currentSection === s.id && view === 'view2') || (s.id === 'title-page' && view === 'view1') ? <Star size={10} fill="currentColor" /> : null}
-                                  </button>
+                                  />
                                 ))}
                               </div>
                             </motion.div>
@@ -2296,19 +2505,15 @@ export default function App() {
                         >
                           <div className="p-2 space-y-1">
                             {SECTIONS.map(s => (
-                              <button
+                              <NavSectionItem
                                 key={s.id}
-                                onClick={() => {
-                                  navigateTo(s.id);
+                                section={s}
+                                isActive={currentSection === s.id || s.subItems?.some(sub => sub.id === currentSection) === true}
+                                onNavigate={(id) => {
+                                  navigateTo(id);
                                   setIsPagesMenuOpen(false);
                                 }}
-                                className={`w-full flex items-center justify-between px-4 py-3 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${
-                                  currentSection === s.id ? 'bg-black text-white' : 'hover:bg-gray-50 text-gray-500'
-                                }`}
-                              >
-                                {s.label.split(' ')[0]}
-                                {currentSection === s.id ? <Star size={10} fill="currentColor" /> : null}
-                              </button>
+                              />
                             ))}
                           </div>
                         </motion.div>
@@ -2317,61 +2522,11 @@ export default function App() {
                   </div>
                 )}
 
-                {isEditing && (currentSection === 'title-page' || currentSection === 'cover-page' || currentSection === 'acknowledgment' || currentSection === 'dedication') && (
-                  <div className="flex gap-1 p-1 bg-gray-100/50 rounded-2xl mr-2">
-                    {(['left', 'center', 'right'] as const).map(align => (
-                      <button
-                        key={align}
-                        onClick={() => {
-                          if (currentSection === 'title-page') setEditingData(prev => ({ ...prev, alignment: align }));
-                          else if (currentSection === 'cover-page') setEditingAcademicCoverData(prev => ({ ...prev, alignment: align }));
-                          else if (currentSection === 'acknowledgment') setEditingAcknowledgement(prev => ({ ...prev, alignment: align }));
-                          else if (currentSection === 'dedication') setEditingDedication(prev => ({ ...prev, alignment: align }));
-                        }}
-                        className={`p-2 rounded-xl transition-all ${
-                          (currentSection === 'title-page' ? editingData.alignment
-                            : currentSection === 'cover-page' ? editingAcademicCoverData.alignment 
-                            : currentSection === 'acknowledgment' ? editingAcknowledgement.alignment 
-                            : editingDedication.alignment) === align
-                            ? 'bg-white text-black shadow-sm'
-                            : 'text-black opacity-40 hover:opacity-100'
-                        }`}
-                      >
-                        <AlignmentIcon alignment={align} />
-                      </button>
-                    ))}
-                  </div>
-                )}
+                {/* Redundant Alignment Toggle removed in favor of Sidebar */}
 
-                {isEditing && (
-                  <div className="flex gap-1 sm:gap-2 p-1 sm:p-1.5 bg-white shadow-xl border border-gray-100 rounded-full sm:rounded-2xl">
-                    <button 
-                      onClick={handleSave} 
-                      className="flex items-center gap-2 p-2 sm:p-3 px-3 sm:px-4 rounded-full sm:rounded-xl bg-neutral-900 text-white hover:bg-black transition-colors"
-                      title="Save All"
-                    >
-                      <Save size={18} className="sm:w-[20px] sm:h-[20px]" />
-                      <span className="text-[9px] font-black uppercase tracking-widest hidden sm:inline ml-2">Save All</span>
-                    </button>
-                    <button 
-                      onClick={handleCancel} 
-                      className="p-2 sm:p-3 rounded-full sm:rounded-xl bg-gray-50 text-gray-400 hover:bg-red-50 hover:text-red-500 transition-all"
-                      title="Discard"
-                    >
-                      <RotateCcw size={18} className="sm:w-[20px] sm:h-[20px]" />
-                    </button>
-                    <button 
-                      onClick={() => {
-                        setIsEditing(false);
-                        setHasUnlocked(false);
-                      }}
-                      className="p-2 sm:p-3 rounded-full sm:rounded-xl hover:bg-gray-50 text-amber-500"
-                      title="Lock Content"
-                    >
-                      <Lock size={18} className="sm:w-[20px] sm:h-[20px]" />
-                    </button>
-                  </div>
-                )}
+
+                {/* Redundant Save/Cancel Buttons removed in favor of Sidebar */}
+
                 
                 <div className="w-[1px] h-8 sm:h-10 bg-gray-100 mx-1 sm:mx-2" />
 
@@ -2386,183 +2541,186 @@ export default function App() {
             </header>
 
             <main className={`flex-1 pt-16 sm:pt-28 overflow-x-hidden ${currentSection === 'cover-page' ? '' : 'max-w-6xl mx-auto w-full px-4 sm:px-10 md:px-20 pb-20 sm:pb-32'}`}>
-              <SortableContext 
-                items={(isEditing ? 
-                  (currentSection === 'cover-page' ? editingAcademicCoverData.blocks : currentSection === 'acknowledgment' ? editingAcknowledgement.blocks : editingDedication.blocks) 
-                  : (currentSection === 'cover-page' ? academicCoverData.blocks : currentSection === 'acknowledgment' ? acknowledgement.blocks : dedication.blocks)
-                )?.map(b => b.id) || []}
-                strategy={verticalListSortingStrategy}
-              >
+              <AnimatePresence mode="wait">
+                <motion.div 
+                  key={currentSection}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="w-full h-full"
+                >
+                  <SortableContext 
+                    items={(isEditing ? 
+                      (getSectionState(currentSection)?.[2] as any)?.blocks 
+                      : (getSectionState(currentSection)?.[0] as any)?.blocks
+                    )?.map((b: any) => b.id) || []}
+                    strategy={verticalListSortingStrategy}
+                  >
                 {currentSection === 'cover-page' ? (
-                  <AcademicCoverPage 
-                    data={isEditing ? editingAcademicCoverData : academicCoverData}
-                    isEditing={isEditing}
-                    onUpdate={(updates) => setEditingAcademicCoverData(prev => ({ ...prev, ...updates }))}
-                    onUpdateBlock={updateBlock}
-                    onRemoveBlock={removeBlock}
-                  />
-                ) : currentSection === 'acknowledgment' || currentSection === 'dedication' ? (
+                  <motion.div
+                    initial={{ opacity: 0, y: 30 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -30 }}
+                    transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+                  >
+                    <AcademicCoverPage 
+                      data={isEditing ? editingAcademicCoverData : academicCoverData}
+                      isEditing={isEditing}
+                      onUpdate={(updates) => setEditingAcademicCoverData(prev => ({ ...prev, ...updates }))}
+                      onUpdateBlock={updateBlock}
+                      onRemoveBlock={removeBlock}
+                    />
+                  </motion.div>
+                ) : (
                   <div className={`max-w-4xl mx-auto px-6 py-20 space-y-12 animate-in fade-in duration-700 flex flex-col ${
-                    (isEditing ? 
-                      (currentSection === 'acknowledgment' ? editingAcknowledgement.alignment : editingDedication.alignment) 
-                      : (currentSection === 'acknowledgment' ? acknowledgement.alignment : dedication.alignment)
-                    ) === 'left' ? 'items-start text-left' 
-                    : (isEditing ? 
-                      (currentSection === 'acknowledgment' ? editingAcknowledgement.alignment : editingDedication.alignment) 
-                      : (currentSection === 'acknowledgment' ? acknowledgement.alignment : dedication.alignment)
-                    ) === 'right' ? 'items-end text-right' 
+                    (isEditing ? (getSectionState(currentSection)?.[2] as any) : (getSectionState(currentSection)?.[0] as any))?.alignment === 'left' ? 'items-start text-left'
+                    : (isEditing ? (getSectionState(currentSection)?.[2] as any) : (getSectionState(currentSection)?.[0] as any))?.alignment === 'right' ? 'items-end text-right'
                     : 'items-center text-center'
                   }`}>
-                    {(isEditing ? 
-                      (currentSection === 'acknowledgment' ? editingAcknowledgement : editingDedication) 
-                      : (currentSection === 'acknowledgment' ? acknowledgement : dedication)
-                    ).layoutOrder.map((itemId) => {
-                      const data = isEditing ? 
-                        (currentSection === 'acknowledgment' ? editingAcknowledgement : editingDedication) 
-                        : (currentSection === 'acknowledgment' ? acknowledgement : dedication);
-                      
+                    {(isEditing ? (getSectionState(currentSection)?.[2] as any)?.layoutOrder : (getSectionState(currentSection)?.[0] as any)?.layoutOrder)?.map((itemId: string, index: number) => {
+                      const data = isEditing ? (getSectionState(currentSection)?.[2] as any) : (getSectionState(currentSection)?.[0] as any);
+                      if (!data) return null;
+
+                      const isEven = index % 2 === 0;
+
                       if (itemId === 'sys-header') {
                          return (
-                          <SortableItem key={itemId} id={itemId} editMode={isEditing}>
-                            <div className="space-y-6 w-full relative group/sys z-10">
-                              <h1 className={`text-[clamp(1.5rem,7.5vw,5rem)] font-black font-display uppercase tracking-[-0.04em] leading-tight w-full px-2 sm:px-4 ${
-                                (isEditing ? 
-                                  (currentSection === 'acknowledgment' ? editingAcknowledgement.alignment : editingDedication.alignment) 
-                                  : (currentSection === 'acknowledgment' ? acknowledgement.alignment : dedication.alignment)
-                                ) === 'left' ? 'text-left' 
-                                : (isEditing ? 
-                                  (currentSection === 'acknowledgment' ? editingAcknowledgement.alignment : editingDedication.alignment) 
-                                  : (currentSection === 'acknowledgment' ? acknowledgement.alignment : dedication.alignment)
-                                ) === 'right' ? 'text-right' 
-                                : 'text-center'
-                              }`}>
-                                {currentSection === 'acknowledgment' ? 'Acknowledgment' : 'Dedication'}
-                              </h1>
-                              {isEditing && (
-                                <button 
-                                  onClick={() => removeBlock(itemId)}
-                                  className="absolute -right-12 top-1/2 -translate-y-1/2 p-3 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all z-20"
-                                >
-                                  <Trash2 size={24} />
-                                </button>
-                              )}
-                            </div>
-                          </SortableItem>
+                          <motion.div
+                            key={itemId}
+                            initial={{ opacity: 0, x: isEven ? -80 : 80 }}
+                            whileInView={{ opacity: 1, x: 0 }}
+                            viewport={{ once: true, margin: "-100px" }}
+                            transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+                            className="w-full"
+                          >
+                            <SortableItem id={itemId} editMode={isEditing}>
+                              <div className="space-y-6 w-full relative group/sys z-10">
+                                <h1 className={`text-[clamp(1.5rem,7.5vw,5rem)] font-black font-display uppercase tracking-[-0.04em] leading-tight w-full px-2 sm:px-4 ${
+                                  data.alignment === 'left' ? 'text-left' 
+                                  : data.alignment === 'right' ? 'text-right' 
+                                  : 'text-center'
+                                }`}>
+                                  {SECTIONS.find(s => s.id === currentSection)?.label.replace(/^\d+\.\s*/, '') || 
+                                   SECTIONS.flatMap(s => s.subItems || []).find(sub => sub.id === currentSection)?.label}
+                                </h1>
+                                {isEditing && (
+                                  <button 
+                                    onClick={() => removeBlock(itemId)}
+                                    className="absolute -right-12 top-1/2 -translate-y-1/2 p-3 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all z-20"
+                                  >
+                                    <Trash2 size={24} />
+                                  </button>
+                                )}
+                              </div>
+                            </SortableItem>
+                          </motion.div>
                         );
                       }
 
                       if (itemId === 'sys-divider') {
                         return (
-                          <SortableItem key={itemId} id={itemId} editMode={isEditing}>
-                            <div className="relative group/sys w-full flex flex-col items-center py-4 sm:py-8 transition-all">
-                              <div className="w-16 sm:w-24 h-1.5 sm:h-2 bg-black rounded-full shadow-sm" />
-                              {isEditing && (
-                                <button 
-                                  onClick={() => removeBlock(itemId)}
-                                  className="absolute -right-12 top-1/2 -translate-y-1/2 p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
-                                >
-                                  <Trash2 size={16} />
-                                </button>
-                              )}
-                            </div>
-                          </SortableItem>
+                          <motion.div
+                            key={itemId}
+                            initial={{ scaleX: 0, opacity: 0 }}
+                            whileInView={{ scaleX: 1, opacity: 1 }}
+                            viewport={{ once: true }}
+                            transition={{ duration: 0.8, delay: 0.2 }}
+                            className="w-full flex-col items-center flex"
+                          >
+                            <SortableItem id={itemId} editMode={isEditing}>
+                              <div className="relative group/sys w-full flex flex-col items-center py-4 sm:py-8 transition-all">
+                                <div className="w-16 sm:w-24 h-1.5 sm:h-2 bg-black rounded-full shadow-sm" />
+                                {isEditing && (
+                                  <button 
+                                    onClick={() => removeBlock(itemId)}
+                                    className="absolute -right-12 top-1/2 -translate-y-1/2 p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                                  >
+                                    <Trash2 size={16} />
+                                  </button>
+                                )}
+                              </div>
+                            </SortableItem>
+                          </motion.div>
                         );
                       }
 
                       if (itemId === 'sys-content') {
                          return (
-                          <SortableItem key={itemId} id={itemId} editMode={isEditing}>
-                            <div className="max-w-3xl mx-auto w-full relative group/sys z-10">
-                              {isEditing ? (
-                                <div className="flex gap-4 relative z-20">
-                                  <textarea
-                                    className={`w-full p-6 sm:p-10 text-xl sm:text-2xl md:text-3xl text-black font-medium leading-relaxed border-2 border-dashed border-gray-200 rounded-[2rem] sm:rounded-[3rem] focus:border-black focus:bg-white outline-none bg-transparent resize-none italic transition-all ${
-                                      (currentSection === 'acknowledgment' ? editingAcknowledgement.alignment : editingDedication.alignment) === 'left' ? 'text-left'
-                                      : (currentSection === 'acknowledgment' ? editingAcknowledgement.alignment : editingDedication.alignment) === 'right' ? 'text-right'
-                                      : 'text-center'
-                                    }`}
-                                    value={data.content}
-                                    onChange={(e) => {
-                                      if (currentSection === 'acknowledgment') setEditingAcknowledgement(prev => ({ ...prev, content: e.target.value }));
-                                      else setEditingDedication(prev => ({ ...prev, content: e.target.value }));
-                                    }}
-                                    rows={8}
-                                  />
-                                  <button 
-                                    onClick={() => removeBlock(itemId)}
-                                    className="self-start p-3 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
-                                  >
-                                    <Trash2 size={24} />
-                                  </button>
-                                </div>
-                              ) : (
-                                <p className={`text-lg sm:text-2xl md:text-4xl text-black font-medium leading-relaxed italic px-4 sm:px-12 break-words w-full mx-auto max-w-4xl ${
-                                  (isEditing ? 
-                                    (currentSection === 'acknowledgment' ? editingAcknowledgement.alignment : editingDedication.alignment) 
-                                    : (currentSection === 'acknowledgment' ? acknowledgement.alignment : dedication.alignment)
-                                  ) === 'left' ? 'text-left' 
-                                  : (isEditing ? 
-                                    (currentSection === 'acknowledgment' ? editingAcknowledgement.alignment : editingDedication.alignment) 
-                                    : (currentSection === 'acknowledgment' ? acknowledgement.alignment : dedication.alignment)
-                                  ) === 'right' ? 'text-right' 
-                                  : 'text-center'
-                                }`}>
-                                  "{String(data.content).includes('[object Object]') ? (currentSection === 'acknowledgment' ? DEFAULT_ACKNOWLEDGEMENT.content : DEFAULT_DEDICATION.content) : data.content}"
-                                </p>
-                              )}
-                            </div>
-                          </SortableItem>
+                          <motion.div
+                            key={itemId}
+                            initial={{ opacity: 0, x: isEven ? 80 : -80 }}
+                            whileInView={{ opacity: 1, x: 0 }}
+                            viewport={{ once: true, margin: "-100px" }}
+                            transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}
+                            className="w-full"
+                          >
+                            <SortableItem id={itemId} editMode={isEditing}>
+                              <div className="max-w-3xl mx-auto w-full relative group/sys z-10">
+                                {isEditing ? (
+                                  <div className="flex gap-4 relative z-20">
+                                    <textarea
+                                      className={`w-full p-6 sm:p-10 text-xl sm:text-2xl md:text-3xl text-black font-medium leading-relaxed border-2 border-dashed border-gray-200 rounded-[2rem] sm:rounded-[3rem] focus:border-black focus:bg-white outline-none bg-transparent resize-none italic transition-all ${
+                                        data.alignment === 'left' ? 'text-left'
+                                        : data.alignment === 'right' ? 'text-right'
+                                        : 'text-center'
+                                      }`}
+                                      value={data.content}
+                                      onChange={(e) => {
+                                        const state = getSectionState(currentSection);
+                                        if (state) state[3](prev => ({ ...prev, content: e.target.value }));
+                                      }}
+                                      rows={8}
+                                    />
+                                    <button 
+                                      onClick={() => removeBlock(itemId)}
+                                      className="self-start p-3 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
+                                    >
+                                      <Trash2 size={24} />
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <p className={`text-lg sm:text-2xl md:text-4xl text-black font-medium leading-relaxed italic px-4 sm:px-12 break-words w-full mx-auto max-w-4xl tracking-tight ${
+                                    data.alignment === 'left' ? 'text-left'
+                                    : data.alignment === 'right' ? 'text-right'
+                                    : 'text-center sm:text-justify'
+                                  }`}>
+                                    {data.content}
+                                  </p>
+                                )}
+                              </div>
+                            </SortableItem>
+                          </motion.div>
                         );
                       }
 
-                      const block = data.blocks?.find(b => b.id === itemId);
+                      const block = data.blocks?.find((b: any) => b.id === itemId);
                       if (block) {
                         return (
-                          <SortableBlock 
-                            key={block.id} 
-                            block={block} 
-                            editMode={isEditing} 
-                            onUpdate={updateBlock}
-                            onRemove={removeBlock}
-                          />
+                          <motion.div
+                            key={block.id}
+                            initial={{ opacity: 0, x: isEven ? -60 : 60 }}
+                            whileInView={{ opacity: 1, x: 0 }}
+                            viewport={{ once: true, margin: "-50px" }}
+                            transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+                            className="w-full"
+                          >
+                            <SortableBlock 
+                              block={block} 
+                              editMode={isEditing} 
+                              onUpdate={updateBlock} 
+                              onRemove={removeBlock} 
+                            />
+                          </motion.div>
                         );
                       }
-
+                      
                       return null;
                     })}
                   </div>
-                ) : (
-                  <div className="min-h-[60vh] flex flex-col items-center justify-center text-center space-y-12 max-w-3xl mx-auto py-20 px-4">
-                   <div className="w-40 h-40 rounded-[3.5rem] bg-gray-50 flex items-center justify-center shadow-inner relative overflow-hidden group border border-gray-100">
-                      <div className="absolute inset-0 bg-black scale-0 group-hover:scale-100 transition-transform duration-700 rounded-[3.5rem]" />
-                      <ChevronRight size={60} className="rotate-90 relative z-10 transition-colors group-hover:text-white" />
-                   </div>
-                   <div className="space-y-6">
-                      <h2 className="text-6xl md:text-8xl font-black font-display leading-[0.9] tracking-[ -0.05em] uppercase">
-                        {SECTIONS.find(s => s.id === currentSection)?.label}
-                      </h2>
-                      <div className="w-24 h-2 bg-black mx-auto rounded-full" />
-                   </div>
-                   <p className="text-black opacity-40 text-2xl md:text-3xl leading-relaxed font-bold tracking-tight px-4">
-                     Artifact curation in progress for <span className="text-black font-black italic">"{SECTIONS.find(s => s.id === currentSection)?.label}"</span>. Please return momentarily.
-                   </p>
-                   <div className="flex flex-col sm:flex-row gap-6 w-full max-w-xl mx-auto pt-8">
-                    <button 
-                      onClick={() => setIsSidebarOpen(true)}
-                      className="flex-1 px-12 py-7 rounded-full bg-black text-white font-black hover:bg-gray-800 transition-all active:scale-95 shadow-[0_30px_60px_rgba(0,0,0,0.3)] tracking-[0.2em] text-base uppercase"
-                    >
-                      Catalogue
-                    </button>
-                    <button 
-                      onClick={() => navigateTo('title-page')}
-                      className="flex-1 px-12 py-7 rounded-full border-2 border-black font-black hover:bg-black hover:text-white transition-all active:scale-95 tracking-[0.2em] text-base uppercase"
-                    >
-                      Home
-                    </button>
-                   </div>
-                </div>
-              )}
+                )}
               </SortableContext>
+                </motion.div>
+              </AnimatePresence>
             </main>
 
             <AnimatePresence>
@@ -2598,25 +2756,17 @@ export default function App() {
                       </button>
                     </div>
                     <nav className="flex-1 overflow-y-auto py-12 px-8 space-y-3">
-                      {SECTIONS.map((section, idx) => (
-                        <button
+                      {SECTIONS.map((section) => (
+                        <NavSectionItem
                           key={section.id}
-                          id={`nav-item-${section.id}`}
-                          onClick={() => navigateTo(section.id)}
-                          className={`w-full text-left px-10 py-6 flex items-center justify-between rounded-[2.5rem] group transition-all duration-500 ${
-                            currentSection === section.id
-                              ? 'bg-black text-white shadow-[0_30px_60px_rgba(0,0,0,0.3)] scale-[1.03]'
-                              : 'hover:bg-gray-50 text-gray-400 hover:text-black'
-                          }`}
-                        >
-                          <div className="flex items-center gap-8">
-                            <span className={`text-xs font-black tabular-nums opacity-20 ${currentSection === section.id ? 'text-white' : ''}`}>
-                              {(idx + 1).toString().padStart(2, '0')}
-                            </span>
-                            <span className="font-black text-xl md:text-2xl tracking-tighter uppercase">{section.label}</span>
-                          </div>
-                          <ChevronRight size={20} className={`transition-all duration-500 ${currentSection === section.id ? 'text-white' : 'opacity-0 group-hover:opacity-100 group-hover:translate-x-2'}`} />
-                        </button>
+                          section={section}
+                          isActive={currentSection === section.id || section.subItems?.some(sub => sub.id === currentSection) === true}
+                          onNavigate={(id) => {
+                            navigateTo(id);
+                            setIsSidebarOpen(false);
+                          }}
+                          isSidebar={true}
+                        />
                       ))}
                     </nav>
                     <div className="p-12 border-t border-gray-50 text-center">
@@ -2646,108 +2796,228 @@ export default function App() {
         ) : null}
       </DragOverlay>
 
-      {/* Global Editor Palette when Editing */}
-      {isEditing && (
-        <div className="fixed bottom-2 sm:bottom-10 left-1/2 -translate-x-1/2 z-[1000] bg-white/95 backdrop-blur-2xl shadow-[0_40px_100px_rgba(0,0,0,0.2)] border border-neutral-200 rounded-2xl sm:rounded-[2.5rem] p-3 sm:p-8 flex flex-col lg:flex-row items-center gap-3 sm:gap-10 animate-in fade-in slide-in-from-bottom-12 duration-700 w-[98vw] lg:w-auto overflow-y-auto max-h-[50vh]">
-          <div className="flex items-center gap-2 sm:gap-4 lg:pr-10 lg:border-r lg:border-gray-100">
-              <div className="flex flex-col mr-1 sm:mr-2">
-                <span className="text-[7px] sm:text-[10px] font-black uppercase tracking-[0.2em] sm:tracking-[0.3em] text-neutral-300">Blocks</span>
+      {/* Redesigned Edit Sidebar */}
+      <AnimatePresence>
+        {isEditing && (
+          <>
+            {/* Backdrop for mobile */}
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsEditing(false)}
+              className="fixed inset-0 bg-black/5 sm:hidden z-[1000]"
+            />
+            
+            <motion.aside
+              initial={{ x: -400, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              exit={{ x: -400, opacity: 0 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              className="fixed left-0 top-0 bottom-0 w-[85vw] sm:w-[420px] bg-white/95 backdrop-blur-3xl shadow-[30px_0_100px_rgba(0,0,0,0.15)] z-[1001] flex flex-col border-r border-neutral-100 overflow-hidden"
+            >
+              {/* Sidebar Header */}
+              <div className="p-8 sm:p-10 flex items-center justify-between border-b border-neutral-50 bg-neutral-50/30">
+                <div className="flex flex-col">
+                  <h2 className="text-3xl font-black uppercase tracking-tighter leading-none">Editor</h2>
+                  <p className="text-[10px] font-black opacity-30 uppercase tracking-[0.3em] mt-3">Portfolio Curation</p>
+                </div>
+                <div className="flex gap-2">
+                   <button 
+                    onClick={() => {
+                      setIsEditing(false);
+                      setHasUnlocked(false);
+                    }}
+                    className="p-3 bg-white shadow-sm border border-neutral-100 rounded-2xl hover:bg-neutral-900 hover:text-white transition-all text-amber-500"
+                    title="Lock Editor"
+                  >
+                    <Lock size={18} />
+                  </button>
+                  <button 
+                    onClick={() => setIsEditing(false)}
+                    className="p-3 bg-white shadow-sm border border-neutral-100 rounded-2xl hover:bg-red-50 hover:text-red-500 transition-all"
+                  >
+                    <X size={18} />
+                  </button>
+                </div>
               </div>
-              <button 
-                onClick={() => addBlock('text')} 
-                className="p-2 sm:p-4 bg-neutral-50 hover:bg-black hover:text-white rounded-xl sm:rounded-3xl transition-all shadow-sm border border-neutral-100 active:scale-95" 
-                title="Add Typography Block"
-              >
-                <Type size={18} className="sm:w-6 sm:h-6" />
-              </button>
-              <button 
-                onClick={() => addBlock('image')} 
-                className="p-2 sm:p-4 bg-neutral-50 hover:bg-black hover:text-white rounded-xl sm:rounded-3xl transition-all shadow-sm border border-neutral-100 active:scale-95" 
-                title="Insert Visual Artifact"
-              >
-                <ImageIcon size={18} className="sm:w-6 sm:h-6" />
-              </button>
-              <button 
-                onClick={() => addBlock('video')} 
-                className="p-2 sm:p-4 bg-neutral-50 hover:bg-black hover:text-white rounded-xl sm:rounded-3xl transition-all shadow-sm border border-neutral-100 active:scale-95" 
-                title="Embed Video Link"
-              >
-                <Video size={18} className="sm:w-6 sm:h-6" />
-              </button>
-          </div>
-          
-          {view === 'view1' && (
-            <div className="flex flex-col gap-1.5 sm:gap-3 w-full">
-                <span className="text-[7px] sm:text-[10px] font-black uppercase tracking-[0.2em] sm:tracking-[0.3em] text-neutral-300 text-center lg:text-left">UI Filters</span>
-                <div className="flex flex-wrap items-center justify-center lg:justify-start gap-1 sm:gap-2">
-                  <VisibilityToggle field="showHeaderImage" label="Header Logo" />
-                  <VisibilityToggle field="showTitle" label="Title" />
-                  <VisibilityToggle field="showSubtitle" label="Meta" />
-                  <VisibilityToggle field="showDescription" label="Course" />
-                  <VisibilityToggle field="showSubmittedByLabel" label="By" />
-                  <VisibilityToggle field="showStudentName" label="Student" />
-                  <VisibilityToggle field="showSubmittedToLabel" label="To" />
-                  <VisibilityToggle field="showProfessorName" label="Prof" />
-                  <VisibilityToggle field="showAcademicYear" label="A.Y." />
 
-                  {['sys-header', 'sys-title', 'sys-subtitle', 'sys-desc', 'sys-divider', 'sys-student', 'sys-professor', 'sys-ay'].some(id => !editingData.layoutOrder.includes(id)) && (
+              {/* Sidebar Content */}
+              <div className="flex-1 overflow-y-auto px-8 sm:px-10 py-12 space-y-12">
+                {/* Save/Discard Actions */}
+                <div className="grid grid-cols-2 gap-4">
+                  <button 
+                    onClick={handleSave}
+                    className="flex items-center justify-center gap-3 px-6 py-5 bg-neutral-900 text-white rounded-3xl font-black uppercase text-[10px] tracking-[0.2em] shadow-2xl hover:bg-black hover:scale-[1.02] active:scale-[0.98] transition-all"
+                  >
+                    <Save size={18} />
+                    Save All
+                  </button>
+                  <button 
+                    onClick={handleCancel}
+                    className="flex items-center justify-center gap-3 px-6 py-5 bg-neutral-50 text-neutral-400 border border-neutral-100 rounded-3xl font-black uppercase text-[10px] tracking-[0.2em] hover:bg-red-50 hover:text-red-500 transition-all"
+                  >
+                    <RotateCcw size={18} />
+                    Reset
+                  </button>
+                </div>
+
+                {/* Blocks Area */}
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-black uppercase tracking-[0.4em] opacity-30">Components</span>
+                    <div className="flex-1 h-[1px] bg-neutral-100 ml-6" />
+                  </div>
+                  <div className="grid grid-cols-3 gap-3">
                     <button 
-                      onClick={() => {
-                        const systemOrder = ['sys-header', 'sys-title', 'sys-subtitle', 'sys-desc', 'sys-divider', 'sys-student', 'sys-professor', 'sys-ay'];
-                        const currentOrder = [...editingData.layoutOrder];
-                        systemOrder.forEach((sysId, index) => {
-                          if (!currentOrder.includes(sysId)) {
-                             // Try to insert near its correct position
-                             currentOrder.push(sysId);
-                          }
-                        });
-                        setEditingData({ ...editingData, layoutOrder: currentOrder });
-                      }}
-                      className="flex items-center gap-2 px-3 py-1.5 rounded-xl text-[10px] font-black transition-all uppercase tracking-tighter shadow-sm border bg-amber-50 text-amber-600 border-amber-100 hover:bg-amber-100"
+                      onClick={() => addBlock('text')}
+                      className="aspect-square bg-neutral-50 rounded-[2.5rem] flex flex-col items-center justify-center gap-3 hover:bg-neutral-900 hover:text-white transition-all group border border-transparent hover:border-neutral-800"
                     >
-                      <RotateCw size={12} />
-                      Restore Elements
+                      <Type size={24} />
+                      <span className="text-[8px] font-black uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-all">Text</span>
                     </button>
-                  )}
+                    <button 
+                      onClick={() => addBlock('image')}
+                      className="aspect-square bg-neutral-50 rounded-[2.5rem] flex flex-col items-center justify-center gap-3 hover:bg-neutral-900 hover:text-white transition-all group border border-transparent hover:border-neutral-800"
+                    >
+                      <ImageIcon size={24} />
+                      <span className="text-[8px] font-black uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-all">Image</span>
+                    </button>
+                    <button 
+                      onClick={() => addBlock('video')}
+                      className="aspect-square bg-neutral-50 rounded-[2.5rem] flex flex-col items-center justify-center gap-3 hover:bg-neutral-900 hover:text-white transition-all group border border-transparent hover:border-neutral-800"
+                    >
+                      <Video size={24} />
+                      <span className="text-[8px] font-black uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-all">Video</span>
+                    </button>
+                  </div>
                 </div>
-            </div>
-          )}
 
-          {isEditing && currentSection === 'cover-page' && (
-            <div className="flex flex-col gap-1.5 sm:gap-3 w-full">
-                <span className="text-[7px] sm:text-[10px] font-black uppercase tracking-[0.2em] sm:tracking-[0.3em] text-neutral-300 text-center lg:text-left">Cover Controls</span>
-                <div className="flex flex-wrap items-center justify-center lg:justify-start gap-1 sm:gap-2">
-                  <button 
-                    onClick={() => setEditingAcademicCoverData(prev => ({ ...prev, showLabel: !prev.showLabel }))}
-                    className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-tighter transition-all border ${
-                      editingAcademicCoverData.showLabel ? 'bg-black text-white border-black' : 'bg-neutral-50 text-neutral-400 border-neutral-100'
-                    }`}
-                  >
-                    Label
-                  </button>
-                  <button 
-                    onClick={() => setEditingAcademicCoverData(prev => ({ ...prev, showHeading: !prev.showHeading }))}
-                    className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-tighter transition-all border ${
-                      editingAcademicCoverData.showHeading ? 'bg-black text-white border-black' : 'bg-neutral-50 text-neutral-400 border-neutral-100'
-                    }`}
-                  >
-                    Heading
-                  </button>
-                  <button 
-                    onClick={() => setEditingAcademicCoverData(prev => ({ ...prev, showParagraph1: !prev.showParagraph1 }))}
-                    className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-tighter transition-all border ${
-                      editingAcademicCoverData.showParagraph1 ? 'bg-black text-white border-black' : 'bg-neutral-50 text-neutral-400 border-neutral-100'
-                    }`}
-                  >
-                    Intro
-                  </button>
+                {/* Specific Section Controls */}
+                {view === 'view1' && (
+                  <div className="space-y-6">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-black uppercase tracking-[0.4em] opacity-30">Title Page UI</span>
+                      <div className="flex-1 h-[1px] bg-neutral-100 ml-6" />
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                       <VisibilityToggle field="showHeaderImage" label="Header Logo" />
+                       <VisibilityToggle field="showTitle" label="Title" />
+                       <VisibilityToggle field="showSubtitle" label="Meta" />
+                       <VisibilityToggle field="showDescription" label="Course" />
+                       <VisibilityToggle field="showSubmittedByLabel" label="By" />
+                       <VisibilityToggle field="showStudentName" label="Student" />
+                       <VisibilityToggle field="showSubmittedToLabel" label="To" />
+                       <VisibilityToggle field="showProfessorName" label="Prof" />
+                       <VisibilityToggle field="showAcademicYear" label="A.Y." />
+                    </div>
+                    {['sys-header', 'sys-title', 'sys-subtitle', 'sys-desc', 'sys-divider', 'sys-student', 'sys-professor', 'sys-ay'].some(id => !editingData.layoutOrder.includes(id)) && (
+                      <button 
+                        onClick={() => {
+                          const systemOrder = ['sys-header', 'sys-title', 'sys-subtitle', 'sys-desc', 'sys-divider', 'sys-student', 'sys-professor', 'sys-ay'];
+                          const currentOrder = [...editingData.layoutOrder];
+                          systemOrder.forEach((sysId) => {
+                            if (!currentOrder.includes(sysId)) currentOrder.push(sysId);
+                          });
+                          setEditingData({ ...editingData, layoutOrder: currentOrder });
+                        }}
+                        className="w-full flex items-center justify-center gap-3 p-4 bg-amber-50 text-amber-600 rounded-2xl text-[10px] font-black uppercase tracking-widest border border-amber-100 hover:bg-amber-100 transition-all"
+                      >
+                        <RotateCw size={14} />
+                        Restore System Elements
+                      </button>
+                    )}
+                  </div>
+                )}
+
+                {currentSection === 'cover-page' && (
+                  <div className="space-y-6">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-black uppercase tracking-[0.4em] opacity-30">Cover Page UI</span>
+                      <div className="flex-1 h-[1px] bg-neutral-100 ml-6" />
+                    </div>
+                    <div className="flex gap-2">
+                      <button 
+                        onClick={() => setEditingAcademicCoverData(prev => ({ ...prev, showLabel: !prev.showLabel }))}
+                        className={`flex-1 py-4 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                          editingAcademicCoverData.showLabel ? 'bg-neutral-900 text-white' : 'bg-neutral-50 text-neutral-400'
+                        }`}
+                      >
+                        Label
+                      </button>
+                      <button 
+                        onClick={() => setEditingAcademicCoverData(prev => ({ ...prev, showHeading: !prev.showHeading }))}
+                        className={`flex-1 py-4 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                          editingAcademicCoverData.showHeading ? 'bg-neutral-900 text-white' : 'bg-neutral-50 text-neutral-400'
+                        }`}
+                      >
+                        Heading
+                      </button>
+                      <button 
+                        onClick={() => setEditingAcademicCoverData(prev => ({ ...prev, showParagraph1: !prev.showParagraph1 }))}
+                        className={`flex-1 py-4 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                          editingAcademicCoverData.showParagraph1 ? 'bg-neutral-900 text-white' : 'bg-neutral-50 text-neutral-400'
+                        }`}
+                      >
+                        Intro
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Global Styling */}
+                <div className="space-y-8">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-black uppercase tracking-[0.4em] opacity-30">Global Style</span>
+                    <div className="flex-1 h-[1px] bg-neutral-100 ml-6" />
+                  </div>
+                  
+                  <div className="space-y-6">
+                    <div className="space-y-4">
+                      <span className="text-[9px] font-black uppercase tracking-[0.2em] opacity-40">Alignment</span>
+                      <div className="flex p-2 bg-neutral-50 rounded-2xl">
+                        {(['left', 'center', 'right'] as const).map(align => {
+                          const state = getSectionState(currentSection);
+                          const currentAlignment = currentSection === 'title-page' ? editingData.alignment
+                                                  : currentSection === 'cover-page' ? editingAcademicCoverData.alignment
+                                                  : state ? (state[2] as any).alignment
+                                                  : 'center';
+
+                          return (
+                            <button
+                              key={align}
+                              onClick={() => {
+                                if (currentSection === 'title-page') setEditingData(prev => ({ ...prev, alignment: align }));
+                                else if (currentSection === 'cover-page') setEditingAcademicCoverData(prev => ({ ...prev, alignment: align }));
+                                else if (state) state[3](prev => ({ ...prev, alignment: align }));
+                              }}
+                              className={`flex-1 flex justify-center p-3 rounded-xl transition-all ${
+                                currentAlignment === align
+                                  ? 'bg-white text-black shadow-lg scale-[1.05]'
+                                  : 'text-neutral-300 hover:text-neutral-900'
+                              }`}
+                            >
+                              <AlignmentIcon alignment={align} />
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    <BackgroundSettings />
+                  </div>
                 </div>
-            </div>
-          )}
+              </div>
 
-          {isEditing && <BackgroundSettings />}
-        </div>
-      )}
+              {/* Sidebar Footer */}
+              <div className="p-8 sm:p-10 border-t border-neutral-50 bg-neutral-50/10 text-center">
+                <p className="text-[8px] font-black uppercase tracking-[0.5em] text-neutral-300 italic">Unlocking Creative Potential</p>
+              </div>
+            </motion.aside>
+          </>
+        )}
+      </AnimatePresence>
+
     </DndContext>
           </motion.div>
         )}
