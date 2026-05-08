@@ -5,7 +5,7 @@ import {
   Menu, X, Pencil, Save, RotateCcw, ChevronRight, 
   Type, Image as ImageIcon, Video, Trash2, 
   AlignLeft, AlignCenter, AlignRight, Eye, EyeOff, Plus, RotateCw,
-  GripVertical, Upload, Book, Star, GraduationCap, Lock, Unlock, Share2, Copy, Check, Palette
+  GripVertical, Upload, Book, Star, GraduationCap, Lock, Unlock, Share2, Copy, Check, Palette, Link
 } from 'lucide-react';
 import { 
   DndContext, 
@@ -1128,9 +1128,45 @@ function SortableBlock({ block, editMode, onUpdate, onRemove, onDuplicate }: Sor
                 <div className="w-20 h-20 rounded-full bg-white shadow-lg flex items-center justify-center group-hover/upload:scale-110 transition-transform text-black">
                   <Upload size={32} />
                 </div>
-                <div className="text-center space-y-1">
-                  <p className="font-black text-black uppercase tracking-widest text-sm">Upload Visual Artifact</p>
-                  <p className="text-xs font-medium opacity-60 uppercase tracking-tighter">Drag and drop or click to browse</p>
+                <div className="flex flex-col items-center gap-6 w-full max-w-sm px-6" onClick={e => e.stopPropagation()}>
+                  <div className="w-16 h-16 rounded-full bg-white shadow-lg flex items-center justify-center text-black">
+                    <Upload size={24} />
+                  </div>
+                  <div className="space-y-4 w-full">
+                    <div className="text-center">
+                      <p className="font-black text-black uppercase tracking-widest text-[10px]">Visual Artifact</p>
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <button 
+                        onClick={() => fileInputRef.current?.click()}
+                        className="w-full py-3 bg-white border border-neutral-100 rounded-xl text-[10px] font-black uppercase tracking-widest text-black hover:bg-neutral-50 transition-all"
+                      >
+                        Select Local File
+                      </button>
+                      <div className="flex gap-2">
+                        <input 
+                          type="text"
+                          placeholder="Paste image URL..."
+                          className="flex-1 px-4 py-3 text-[10px] bg-white border border-neutral-100 rounded-xl outline-none focus:border-black transition-all font-sans text-black"
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              const val = (e.currentTarget as HTMLInputElement).value;
+                              if (val) onUpdate(block.id, { content: val });
+                            }
+                          }}
+                        />
+                        <button 
+                          onClick={(e) => {
+                            const input = e.currentTarget.previousElementSibling as HTMLInputElement;
+                            if (input.value) onUpdate(block.id, { content: input.value });
+                          }}
+                          className="px-4 py-3 bg-neutral-900 text-white rounded-xl hover:bg-black transition-all flex items-center justify-center"
+                        >
+                          <Link size={14} />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
                 </div>
                 <input 
                   type="file" 
@@ -1145,7 +1181,7 @@ function SortableBlock({ block, editMode, onUpdate, onRemove, onDuplicate }: Sor
                 <img src={block.content} alt="Preview" className="max-w-full h-auto rounded-[2rem] shadow-2xl transition-all" />
                 <button 
                   onClick={() => onUpdate(block.id, { content: '' })}
-                  className="absolute top-4 right-4 bg-white/90 backdrop-blur p-3 rounded-full shadow-2xl opacity-0 group-hover/img-preview:opacity-100 transition-opacity hover:bg-red-500 hover:text-white"
+                  className="absolute top-4 right-4 bg-white/90 backdrop-blur p-3 rounded-full shadow-2xl transition-opacity hover:bg-red-500 hover:text-white"
                 >
                   <X size={20} />
                 </button>
@@ -1482,52 +1518,38 @@ export default function App() {
         if (decompressed) {
           const parsed = JSON.parse(decompressed);
           
-          if (parsed.titlePage) {
-            setTitlePageData(parsed.titlePage);
-            setEditingData(parsed.titlePage);
-          }
-          if (parsed.coverPage) {
-            setCoverPageData(parsed.coverPage);
-            setEditingCoverData(parsed.coverPage);
-          }
-          if (parsed.academicCover) {
-            setAcademicCoverData(parsed.academicCover);
-            setEditingAcademicCoverData(parsed.academicCover);
-          }
-          if (parsed.acknowledgement) {
-            setAcknowledgement(parsed.acknowledgement);
-            setEditingAcknowledgement(parsed.acknowledgement);
-          }
-          if (parsed.dedication) {
-            setDedication(parsed.dedication);
-            setEditingDedication(parsed.dedication);
-          }
-          if (parsed.philosophy) { setPhilosophy(parsed.philosophy); setEditingPhilosophy(parsed.philosophy); }
-          if (parsed.cv) { setCV(parsed.cv); setEditingCV(parsed.cv); }
-          if (parsed.achievements) { setAchievements(parsed.achievements); setEditingAchievements(parsed.achievements); }
-          if (parsed.seminars) { setSeminars(parsed.seminars); setEditingSeminars(parsed.seminars); }
-          if (parsed.deptBackground) { setDeptBackground(parsed.deptBackground); setEditingDeptBackground(parsed.deptBackground); }
-          if (parsed.teachers) { setTeachers(parsed.teachers); setEditingTeachers(parsed.teachers); }
-          if (parsed.inclusions) { setInclusions(parsed.inclusions); setEditingInclusions(parsed.inclusions); }
-          if (parsed.appendices) { setAppendices(parsed.appendices); setEditingAppendices(parsed.appendices); }
-
-          if (parsed.premises) { setPremises(parsed.premises); setEditingPremises(parsed.premises); }
-          if (parsed.logo) { setLogo(parsed.logo); setEditingLogo(parsed.logo); }
-          if (parsed.introHistory) { setIntroHistory(parsed.introHistory); setEditingIntroHistory(parsed.introHistory); }
-          if (parsed.missionVision) { setMissionVision(parsed.missionVision); setEditingMissionVision(parsed.missionVision); }
-          if (parsed.orgStructure) { setOrgStructure(parsed.orgStructure); setEditingOrgStructure(parsed.orgStructure); }
-          if (parsed.subjectsTaught) { setSubjectsTaught(parsed.subjectsTaught); setEditingSubjectsTaught(parsed.subjectsTaught); }
-          if (parsed.messageTeachers) { setMessageTeachers(parsed.messageTeachers); setEditingMessageTeachers(parsed.messageTeachers); }
-          if (parsed.quizzes) { setQuizzes(parsed.quizzes); setEditingQuizzes(parsed.quizzes); }
-          if (parsed.activities) { setActivities(parsed.activities); setEditingActivities(parsed.activities); }
-          if (parsed.lessonPlan) { setLessonPlan(parsed.lessonPlan); setEditingLessonPlan(parsed.lessonPlan); }
-          if (parsed.instructionalMaterials) { setInstructionalMaterials(parsed.instructionalMaterials); setEditingInstructionalMaterials(parsed.instructionalMaterials); }
-          if (parsed.extracurricular) { setExtracurricular(parsed.extracurricular); setEditingExtracurricular(parsed.extracurricular); }
-          if (parsed.evidence) { setEvidence(parsed.evidence); setEditingEvidence(parsed.evidence); }
-
-          if (parsed.appSettings) {
-            setAppSettings(parsed.appSettings);
-            setEditingAppSettings(parsed.appSettings);
+          if (parsed) {
+            if (parsed.titlePage) { setTitlePageData(parsed.titlePage); setEditingData(parsed.titlePage); }
+            if (parsed.coverPage) { setCoverPageData(parsed.coverPage); setEditingCoverData(parsed.coverPage); }
+            if (parsed.academicCover) { setAcademicCoverData(parsed.academicCover); setEditingAcademicCoverData(parsed.academicCover); }
+            if (parsed.acknowledgement) { setAcknowledgement(parsed.acknowledgement); setEditingAcknowledgement(parsed.acknowledgement); }
+            if (parsed.dedication) { setDedication(parsed.dedication); setEditingDedication(parsed.dedication); }
+            if (parsed.philosophy) { setPhilosophy(parsed.philosophy); setEditingPhilosophy(parsed.philosophy); }
+            if (parsed.cv) { setCV(parsed.cv); setEditingCV(parsed.cv); }
+            if (parsed.achievements) { setAchievements(parsed.achievements); setEditingAchievements(parsed.achievements); }
+            if (parsed.seminars) { setSeminars(parsed.seminars); setEditingSeminars(parsed.seminars); }
+            if (parsed.deptBackground) { setDeptBackground(parsed.deptBackground); setEditingDeptBackground(parsed.deptBackground); }
+            if (parsed.teachers) { setTeachers(parsed.teachers); setEditingTeachers(parsed.teachers); }
+            if (parsed.inclusions) { setInclusions(parsed.inclusions); setEditingInclusions(parsed.inclusions); }
+            if (parsed.appendices) { setAppendices(parsed.appendices); setEditingAppendices(parsed.appendices); }
+            if (parsed.premises) { setPremises(parsed.premises); setEditingPremises(parsed.premises); }
+            if (parsed.logo) { setLogo(parsed.logo); setEditingLogo(parsed.logo); }
+            if (parsed.introHistory) { setIntroHistory(parsed.introHistory); setEditingIntroHistory(parsed.introHistory); }
+            if (parsed.missionVision) { setMissionVision(parsed.missionVision); setEditingMissionVision(parsed.missionVision); }
+            if (parsed.orgStructure) { setOrgStructure(parsed.orgStructure); setEditingOrgStructure(parsed.orgStructure); }
+            if (parsed.subjectsTaught) { setSubjectsTaught(parsed.subjectsTaught); setEditingSubjectsTaught(parsed.subjectsTaught); }
+            if (parsed.messageTeachers) { setMessageTeachers(parsed.messageTeachers); setEditingMessageTeachers(parsed.messageTeachers); }
+            if (parsed.quizzes) { setQuizzes(parsed.quizzes); setEditingQuizzes(parsed.quizzes); }
+            if (parsed.activities) { setActivities(parsed.activities); setEditingActivities(parsed.activities); }
+            if (parsed.lessonPlan) { setLessonPlan(parsed.lessonPlan); setEditingLessonPlan(parsed.lessonPlan); }
+            if (parsed.instructionalMaterials) { setInstructionalMaterials(parsed.instructionalMaterials); setEditingInstructionalMaterials(parsed.instructionalMaterials); }
+            if (parsed.extracurricular) { setExtracurricular(parsed.extracurricular); setEditingExtracurricular(parsed.extracurricular); }
+            if (parsed.evidence) { setEvidence(parsed.evidence); setEditingEvidence(parsed.evidence); }
+  
+            if (parsed.appSettings) {
+              setAppSettings(parsed.appSettings);
+              setEditingAppSettings(parsed.appSettings);
+            }
           }
           
           // Clear URL parameter so refreshing doesn't keep loading old shared data if they edit later
@@ -2343,7 +2365,7 @@ export default function App() {
                       const data = isEditing ? editingData : titlePageData;
                       
                       // 1. System Items
-                      if (itemId === 'sys-header' && (isEditing || data.showHeaderImage)) {
+                      if (itemId.startsWith('sys-header') && (isEditing || data.showHeaderImage)) {
                         return (
                           <SortableItem key={itemId} id={itemId} editMode={isEditing}>
                             <motion.div 
@@ -2365,7 +2387,7 @@ export default function App() {
                                        />
                                        <button 
                                          onClick={() => setEditingData({ ...editingData, headerImage: '' })}
-                                         className="absolute -top-3 -right-3 p-3 bg-red-500 text-white rounded-full shadow-xl opacity-0 group-hover/img:opacity-100 transition-all hover:scale-110"
+                                         className="absolute -top-3 -right-3 p-3 bg-red-500 text-white rounded-full shadow-xl transition-all hover:scale-110"
                                        >
                                          <Trash2 size={20} />
                                        </button>
@@ -2375,8 +2397,46 @@ export default function App() {
                                         onClick={() => headerFileInputRef.current?.click()}
                                         className="w-full max-w-2xl aspect-[3/1] border-2 border-dashed border-gray-200 rounded-3xl flex flex-col items-center justify-center gap-3 text-gray-400 hover:border-black hover:text-black transition-all bg-gray-50/50"
                                      >
-                                       <Upload size={32} />
-                                       <span className="font-black uppercase tracking-widest text-xs">Upload Header Image</span>
+                                       <div className="flex flex-col items-center gap-4" onClick={(e) => e.stopPropagation()}>
+                                         <div className="w-12 h-12 rounded-full bg-white shadow-sm flex items-center justify-center text-black">
+                                           <Upload size={18} />
+                                         </div>
+                                         <div className="space-y-4 w-full">
+                                           <div className="text-center">
+                                             <p className="font-black text-black uppercase tracking-widest text-[10px]">Header Artifact</p>
+                                           </div>
+                                           <div className="flex flex-col gap-2">
+                                             <button 
+                                               onClick={() => headerFileInputRef.current?.click()}
+                                               className="w-full py-2 bg-white border border-neutral-100 rounded-lg text-[9px] font-black uppercase tracking-widest text-black hover:bg-neutral-50 transition-all"
+                                             >
+                                               Select Local File
+                                             </button>
+                                             <div className="flex gap-1">
+                                               <input 
+                                                 type="text"
+                                                 placeholder="Paste URL..."
+                                                 className="flex-1 px-3 py-2 text-[9px] bg-white border border-neutral-100 rounded-lg outline-none focus:border-black transition-all font-sans text-black"
+                                                 onKeyDown={(e) => {
+                                                   if (e.key === 'Enter') {
+                                                     const val = (e.currentTarget as HTMLInputElement).value;
+                                                     if (val) setEditingData({ ...editingData, headerImage: val });
+                                                   }
+                                                 }}
+                                               />
+                                               <button 
+                                                 onClick={(e) => {
+                                                   const input = e.currentTarget.previousElementSibling as HTMLInputElement;
+                                                   if (input.value) setEditingData({ ...editingData, headerImage: input.value });
+                                                 }}
+                                                 className="px-3 py-2 bg-black text-white rounded-lg"
+                                               >
+                                                 <Link size={12} />
+                                               </button>
+                                             </div>
+                                           </div>
+                                         </div>
+                                       </div>
                                      </button>
                                    )}
                                    <input 
@@ -2422,7 +2482,7 @@ export default function App() {
                         );
                       }
 
-                      if (itemId === 'sys-title' && (isEditing || data.showTitle)) {
+                      if (itemId.startsWith('sys-title') && (isEditing || data.showTitle)) {
                         return (
                           <SortableItem key={itemId} id={itemId} editMode={isEditing}>
                             <motion.div 
@@ -2459,7 +2519,7 @@ export default function App() {
                         );
                       }
 
-                      if (itemId === 'sys-subtitle' && (isEditing || data.showSubtitle)) {
+                      if (itemId.startsWith('sys-subtitle') && (isEditing || data.showSubtitle)) {
                         return (
                           <SortableItem key={itemId} id={itemId} editMode={isEditing}>
                             <motion.div 
@@ -2492,7 +2552,7 @@ export default function App() {
                         );
                       }
 
-                      if (itemId === 'sys-desc' && (isEditing || data.showDescription)) {
+                      if (itemId.startsWith('sys-desc') && (isEditing || data.showDescription)) {
                         return (
                           <SortableItem key={itemId} id={itemId} editMode={isEditing}>
                             <motion.div 
@@ -2524,7 +2584,7 @@ export default function App() {
                         );
                       }
 
-                      if (itemId === 'sys-divider') {
+                      if (itemId.startsWith('sys-divider')) {
                         return (
                           <SortableItem key={itemId} id={itemId} editMode={isEditing}>
                             <motion.div 
@@ -2546,7 +2606,7 @@ export default function App() {
                         );
                       }
 
-                      if (itemId === 'sys-student' && (isEditing || (data.showSubmittedByLabel || data.showStudentName))) {
+                      if (itemId.startsWith('sys-student') && (isEditing || (data.showSubmittedByLabel || data.showStudentName))) {
                         return (
                           <SortableItem key={itemId} id={itemId} editMode={isEditing}>
                             <motion.div 
@@ -2601,7 +2661,7 @@ export default function App() {
                         );
                       }
 
-                      if (itemId === 'sys-professor' && (isEditing || (data.showSubmittedToLabel || data.showProfessorName))) {
+                      if (itemId.startsWith('sys-professor') && (isEditing || (data.showSubmittedToLabel || data.showProfessorName))) {
                         return (
                           <SortableItem key={itemId} id={itemId} editMode={isEditing}>
                             <motion.div 
@@ -2647,7 +2707,7 @@ export default function App() {
                         );
                       }
 
-                      if (itemId === 'sys-ay' && (isEditing || data.showAcademicYear)) {
+                      if (itemId.startsWith('sys-ay') && (isEditing || data.showAcademicYear)) {
                         return (
                           <SortableItem key={itemId} id={itemId} editMode={isEditing}>
                             <motion.div 
@@ -2900,7 +2960,7 @@ export default function App() {
 
                       const isEven = index % 2 === 0;
 
-                      if (itemId === 'sys-header') {
+                      if (itemId.startsWith('sys-header')) {
                          return (
                           <motion.div
                             key={itemId}
@@ -2943,7 +3003,7 @@ export default function App() {
                         );
                       }
 
-                      if (itemId === 'sys-divider') {
+                      if (itemId.startsWith('sys-divider')) {
                         return (
                           <motion.div
                             key={itemId}
@@ -2979,7 +3039,7 @@ export default function App() {
                         );
                       }
 
-                      if (itemId === 'sys-content') {
+                      if (itemId.startsWith('sys-content')) {
                          return (
                           <motion.div
                             key={itemId}
