@@ -166,17 +166,39 @@ const NavSectionItem = ({
 }) => {
   const [isHovered, setIsHovered] = useState(false);
 
+  // Auto-expand if active subitem is found
+  useEffect(() => {
+    const hasActiveSub = section.subItems?.some((sub: any) => {
+      // In a real app we'd compare against currentSection, but we can't easily pass it here without props
+      // However, we receive isActive from parent which is true if subItem is active
+      return false; // placeholder, we'll use isActive
+    });
+    if (isActive && section.subItems) {
+      setIsHovered(true);
+    }
+  }, [isActive, section.subItems]);
+
+  const isFolderOnly = ['department-background', 'subject-teachers', 'subject-inclusions', 'appendices'].includes(section.id);
+
   return (
     <div 
       className="relative w-full"
       onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      onMouseLeave={() => {
+        // Only close if not active
+        if (!isActive) setIsHovered(false);
+      }}
       onTouchStart={() => setIsHovered(true)}
     >
       <button
         onClick={() => {
-          onNavigate(section.id);
-          if (!section.subItems) setIsHovered(false);
+          if (isFolderOnly) {
+            setIsHovered(!isHovered);
+          } else {
+            onNavigate(section.id);
+            if (!section.subItems) setIsHovered(false);
+            else setIsHovered(!isHovered);
+          }
         }}
         className={`w-full flex items-center justify-between transition-all duration-300 ${
           isSidebar 
@@ -216,7 +238,7 @@ const NavSectionItem = ({
             exit={{ height: 0, opacity: 0, y: -10 }}
             transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
             className={`overflow-hidden rounded-2xl mt-1 border-l-2 ${
-              isActive ? 'bg-white/5 border-white/20' : 'bg-gray-50 border-black/5'
+              isActive ? 'bg-black/5 border-black/10' : 'bg-gray-50 border-black/5'
             } ${isSidebar ? 'ml-12' : 'ml-4'}`}
           >
             <div className="py-2 space-y-1">
@@ -226,11 +248,11 @@ const NavSectionItem = ({
                   onClick={(e) => {
                     e.stopPropagation();
                     onNavigate(sub.id);
-                    setIsHovered(false);
+                    // On mobile we might want to close sidebar, parent handles that
                   }}
                   className={`w-full text-left px-6 py-2 font-bold uppercase tracking-widest transition-colors ${
                     isSidebar ? 'text-xs opacity-60 hover:opacity-100' : 'text-[7px] opacity-40 hover:opacity-80'
-                  } ${isActive ? 'text-white' : 'text-black'}`}
+                  } ${isActive && isSidebar ? 'text-black/80' : 'text-black/60'}`}
                 >
                   • {sub.label}
                 </button>
