@@ -7,7 +7,8 @@ import {
   Menu, X, Pencil, Save, RotateCcw, ChevronRight, 
   Type, Image as ImageIcon, Video, Trash2, 
   AlignLeft, AlignCenter, AlignRight, Eye, EyeOff, Plus, RotateCw,
-  GripVertical, Upload, Book, Star, GraduationCap, Lock, Unlock, Share2, Copy, Check, Palette, Link, Globe
+  GripVertical, Upload, Book, Star, GraduationCap, Lock, Unlock, Share2, Copy, Check, Palette, Link, Globe,
+  ArrowUpCircle, ArrowDownCircle, ArrowLeftCircle, ArrowRightCircle
 } from 'lucide-react';
 import { 
   DndContext, 
@@ -124,6 +125,7 @@ const DEFAULT_COVER_DATA: CoverPageData = {
 const DEFAULT_TITLE_DATA: TitlePageData = {
   headerImage: '', // User will upload this
   showHeaderImage: true,
+  headerImageWidth: 600,
   title: 'E-Portfolio',
   showTitle: true,
   subtitle: 'in TLE 10',
@@ -165,7 +167,8 @@ const NavSectionItem = ({
   isActive: boolean, 
   onNavigate: (id: SectionId) => void,
   isSidebar?: boolean,
-  customLabel?: string // New prop
+  customLabel?: string, // New prop
+  key?: any
 }) => {
   const [isHovered, setIsHovered] = useState(false);
 
