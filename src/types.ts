@@ -31,9 +31,6 @@ export interface ContentBlock {
   content: string;
   alignment: 'left' | 'center' | 'right';
   pillars?: PillarCard[];
-  width?: number;
-  caption?: string;
-  captionPosition?: 'top' | 'bottom' | 'left' | 'right';
 }
 
 export interface PillarCard {
@@ -53,7 +50,7 @@ export interface CoverPageSectionData {
   blocks: ContentBlock[];
   layoutOrder: string[];
   alignment?: 'left' | 'center' | 'right';
-  width?: number;
+  customHeader?: string;
 }
 
 export interface BasicSectionData {
@@ -61,7 +58,7 @@ export interface BasicSectionData {
   blocks: ContentBlock[];
   layoutOrder: string[];
   alignment?: 'left' | 'center' | 'right';
-  width?: number;
+  customHeader?: string;
 }
 
 export interface CoverPageData {
@@ -108,7 +105,6 @@ export interface TitlePageData {
   blocks: ContentBlock[];
   layoutOrder: string[]; // Track order of all pieces: title, subtitle, desc, student, professor, ay, and all custom block IDs
   alignment?: 'left' | 'center' | 'right';
-  width?: number;
 }
 
 export interface Section {

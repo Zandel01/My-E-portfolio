@@ -633,7 +633,7 @@ const AcademicCoverPage = ({
       data.alignment === 'left' ? 'items-start text-left'
       : data.alignment === 'right' ? 'items-end text-right'
       : 'items-center text-center'
-    }`} style={{ width: `${data.width || 100}%` }}>
+    }`}>
       {data.layoutOrder.map((itemId, index) => {
         const isEven = index % 2 === 0;
 
@@ -1080,32 +1080,6 @@ function SortableBlock({ block, editMode, onUpdate, onRemove, onDuplicate, imgbb
     right: 'text-right flex flex-col items-end',
   }[block.alignment];
 
-  const captionPosition = block.captionPosition || 'bottom';
-  const isHorizontal = captionPosition === 'left' || captionPosition === 'right';
-
-  const CaptionInput = () => (
-    <div className={`w-full ${isHorizontal ? 'max-w-xs' : 'w-full'}`}>
-      <textarea
-        className="w-full p-4 border-2 border-dashed border-gray-100 rounded-2xl focus:border-black focus:bg-white outline-none bg-transparent resize-none text-center transition-all text-sm font-medium placeholder:text-gray-300 whitespace-pre-wrap"
-        placeholder="Add caption text here..."
-        value={block.caption || ''}
-        onChange={(e) => onUpdate(block.id, { caption: e.target.value })}
-        rows={2}
-      />
-    </div>
-  );
-
-  const CaptionDisplay = () => (
-    block.caption ? (
-      <div className={`${isHorizontal ? 'max-w-xs' : 'w-full'} ${block.alignment === 'center' ? 'text-center' : block.alignment === 'right' ? 'text-right' : 'text-left'}`}>
-        <p className="text-black/60 text-sm md:text-base leading-relaxed font-medium whitespace-pre-wrap italic">
-          {block.caption}
-        </p>
-      </div>
-    ) : null
-  );
-
-  const currentWidth = block.width || 100;
 
   return (
     <div 
@@ -1124,18 +1098,6 @@ function SortableBlock({ block, editMode, onUpdate, onRemove, onDuplicate, imgbb
             <GripVertical size={20} />
           </button>
           <div className="flex items-center gap-1">
-            <div className="flex items-center gap-2 px-2 border-l border-gray-100">
-              <span className="text-[10px] font-black text-gray-400 w-8">{currentWidth}%</span>
-              <input 
-                type="range"
-                min="20"
-                max="100"
-                step="5"
-                value={currentWidth}
-                onChange={(e) => onUpdate(block.id, { width: parseInt(e.target.value) })}
-                className="w-20 h-1 bg-gray-100 rounded-lg appearance-none cursor-pointer accent-black"
-              />
-            </div>
             <button 
               onClick={() => {
                 const next: Record<string, 'left' | 'center' | 'right'> = { left: 'center', center: 'right', right: 'left' };
@@ -1153,23 +1115,6 @@ function SortableBlock({ block, editMode, onUpdate, onRemove, onDuplicate, imgbb
             >
               <Copy size={20} />
             </button>
-            {(block.type === 'image' || block.type === 'video') && (
-              <div className="flex items-center gap-0.5 border-l border-gray-100 pl-1">
-                {(['top', 'bottom', 'left', 'right'] as const).map(pos => (
-                  <button
-                    key={pos}
-                    onClick={() => onUpdate(block.id, { captionPosition: pos })}
-                    className={`p-1.5 rounded-lg transition-all ${block.captionPosition === pos ? 'bg-black text-white' : 'text-gray-400 hover:text-black hover:bg-gray-50'}`}
-                    title={`Caption ${pos}`}
-                  >
-                    {pos === 'top' && <ArrowUpCircle size={16} />}
-                    {pos === 'bottom' && <ArrowDownCircle size={16} />}
-                    {pos === 'left' && <ArrowLeftCircle size={16} />}
-                    {pos === 'right' && <ArrowRightCircle size={16} />}
-                  </button>
-                ))}
-              </div>
-            )}
             <button 
               onClick={() => onRemove(block.id)}
               className="p-2 hover:bg-red-50 text-red-500 rounded-lg"
@@ -1236,7 +1181,6 @@ function SortableBlock({ block, editMode, onUpdate, onRemove, onDuplicate, imgbb
           <textarea
             className="w-full p-6 border-2 border-dashed border-gray-200 rounded-2xl focus:border-black focus:bg-white outline-none bg-transparent resize-none text-center transition-all text-xl font-medium placeholder:text-gray-300 whitespace-pre-wrap"
             placeholder="Type your content here..."
-            style={{ maxWidth: `${currentWidth}%` }}
             value={block.content}
             onChange={(e) => onUpdate(block.id, { content: e.target.value })}
             rows={2}
@@ -1244,7 +1188,6 @@ function SortableBlock({ block, editMode, onUpdate, onRemove, onDuplicate, imgbb
         ) : (
           <p 
             className="text-black whitespace-pre-wrap text-xl md:text-2xl leading-relaxed font-medium"
-            style={{ width: `${currentWidth}%` }}
           >
             {block.content}
           </p>
@@ -1252,10 +1195,10 @@ function SortableBlock({ block, editMode, onUpdate, onRemove, onDuplicate, imgbb
       )}
 
       {block.type === 'image' && (
-        <div className={`flex w-full ${isHorizontal ? 'flex-row' : 'flex-col'} ${captionPosition === 'top' || captionPosition === 'left' ? 'flex-col-reverse flex-row-reverse text-neutral-100' : ''} gap-6 items-center`}>
-          <div className={`${isHorizontal ? 'flex-1' : 'w-full'} flex ${alignmentClasses}`}>
+        <div className="w-full flex flex-col items-center gap-6">
+          <div className="w-full flex justify-center">
             {editMode ? (
-              <div className="w-full" style={{ maxWidth: `${currentWidth}%` }}>
+              <div className="w-full">
                 {!block.content ? (
                   <div 
                     onClick={() => fileInputRef.current?.click()}
@@ -1328,7 +1271,6 @@ function SortableBlock({ block, editMode, onUpdate, onRemove, onDuplicate, imgbb
                       src={block.content} 
                       alt="Preview" 
                       className="w-full h-auto rounded-[2rem] shadow-2xl transition-all" 
-                      style={{ maxWidth: '100%' }}
                     />
                     <button 
                       onClick={() => onUpdate(block.id, { content: '' })}
@@ -1344,24 +1286,19 @@ function SortableBlock({ block, editMode, onUpdate, onRemove, onDuplicate, imgbb
                 <img 
                   src={block.content} 
                   alt="" 
-                  className="h-auto rounded-[2.5rem] shadow-[0_40px_100px_-20px_rgba(0,0,0,0.3)]" 
-                  style={{ width: `${currentWidth}%`, maxWidth: '100%' }} 
+                  className="h-auto rounded-[2.5rem] shadow-[0_40px_100px_-20px_rgba(0,0,0,0.3)] w-full" 
                   loading="lazy" 
                 />
               )
             )}
           </div>
-          <div className={`${isHorizontal ? 'w-auto' : 'w-full'} flex ${alignmentClasses}`}>
-            {editMode ? <CaptionInput /> : <CaptionDisplay />}
-          </div>
         </div>
       )}
 
       {block.type === 'video' && (
-        <div className={`flex w-full ${isHorizontal ? 'flex-row' : 'flex-col'} ${captionPosition === 'top' || captionPosition === 'left' ? 'flex-col-reverse flex-row-reverse' : ''} gap-6 items-center`}>
+        <div className="w-full flex flex-col items-center gap-6">
           <div 
-            className={`${isHorizontal ? 'flex-1' : 'w-full'} aspect-video bg-gray-50 rounded-[3rem] overflow-hidden shadow-2xl flex items-center justify-center border border-gray-100 group/video relative`}
-            style={{ maxWidth: `${currentWidth}%` }}
+            className="w-full aspect-video bg-gray-50 rounded-[3rem] overflow-hidden shadow-2xl flex items-center justify-center border border-gray-100 group/video relative"
           >
             {editMode ? (
               <div className="p-12 w-full max-w-md text-center space-y-6">
@@ -1397,9 +1334,6 @@ function SortableBlock({ block, editMode, onUpdate, onRemove, onDuplicate, imgbb
                 </div>
               )
             )}
-          </div>
-          <div className={`${isHorizontal ? 'w-auto' : 'w-full'} flex ${alignmentClasses}`}>
-            {editMode ? <CaptionInput /> : <CaptionDisplay />}
           </div>
         </div>
       )}
@@ -1710,11 +1644,36 @@ export default function App() {
           const parsed = JSON.parse(decompressed);
           
           if (parsed) {
-            if (parsed.titlePage) { setTitlePageData(parsed.titlePage); setEditingData(parsed.titlePage); }
-            if (parsed.coverPage) { setCoverPageData(parsed.coverPage); setEditingCoverData(parsed.coverPage); }
-            if (parsed.academicCover) { setAcademicCoverData(parsed.academicCover); setEditingAcademicCoverData(parsed.academicCover); }
-            if (parsed.acknowledgement) { setAcknowledgement(parsed.acknowledgement); setEditingAcknowledgement(parsed.acknowledgement); }
-            if (parsed.dedication) { setDedication(parsed.dedication); setEditingDedication(parsed.dedication); }
+            const sanitizeStrings = (obj: any, defaults: any) => {
+              const res = { ...obj };
+              Object.keys(defaults).forEach(key => {
+                if (typeof defaults[key] === 'string' && typeof res[key] === 'object') {
+                  res[key] = defaults[key];
+                }
+              });
+              return res;
+            };
+
+            if (parsed.titlePage) { 
+              const data = sanitizeStrings(parsed.titlePage, DEFAULT_TITLE_DATA);
+              setTitlePageData(data); setEditingData(data); 
+            }
+            if (parsed.coverPage) { 
+              const data = sanitizeStrings(parsed.coverPage, DEFAULT_COVER_DATA);
+              setCoverPageData(data); setEditingCoverData(data); 
+            }
+            if (parsed.academicCover) { 
+              const data = sanitizeStrings(parsed.academicCover, DEFAULT_ACADEMIC_COVER);
+              setAcademicCoverData(data); setEditingAcademicCoverData(data); 
+            }
+            if (parsed.acknowledgement) { 
+              const data = sanitizeStrings(parsed.acknowledgement, DEFAULT_ACKNOWLEDGEMENT);
+              setAcknowledgement(data); setEditingAcknowledgement(data); 
+            }
+            if (parsed.dedication) { 
+              const data = sanitizeStrings(parsed.dedication, DEFAULT_DEDICATION);
+              setDedication(data); setEditingDedication(data); 
+            }
             if (parsed.philosophy) { setPhilosophy(parsed.philosophy); setEditingPhilosophy(parsed.philosophy); }
             if (parsed.cv) { setCV(parsed.cv); setEditingCV(parsed.cv); }
             if (parsed.achievements) { setAchievements(parsed.achievements); setEditingAchievements(parsed.achievements); }
@@ -1764,7 +1723,18 @@ export default function App() {
             ...(parsed.blocks || []).map((b: any) => b.id)
           ];
         }
-        const merged = { ...DEFAULT_TITLE_DATA, ...parsed };
+        
+        const sanitizeStrings = (obj: any, defaults: any) => {
+          const res = { ...obj };
+          Object.keys(defaults).forEach(key => {
+            if (typeof defaults[key] === 'string' && typeof res[key] === 'object') {
+              res[key] = defaults[key];
+            }
+          });
+          return res;
+        };
+
+        const merged = sanitizeStrings({ ...DEFAULT_TITLE_DATA, ...parsed }, DEFAULT_TITLE_DATA);
         setTitlePageData(merged);
         setEditingData(merged);
       } catch (e) {
@@ -1808,7 +1778,18 @@ export default function App() {
         if (!parsed.layoutOrder) {
           parsed.layoutOrder = ['sys-label', 'sys-heading', 'sys-divider', 'sys-p1', 'sys-p2', 'sys-pillars', ...(parsed.blocks || []).map((b: any) => b.id)];
         }
-        const merged = { ...DEFAULT_ACADEMIC_COVER, ...parsed };
+        
+        const sanitizeStrings = (obj: any, defaults: any) => {
+          const res = { ...obj };
+          Object.keys(defaults).forEach(key => {
+            if (typeof defaults[key] === 'string' && typeof res[key] === 'object') {
+              res[key] = defaults[key];
+            }
+          });
+          return res;
+        };
+
+        const merged = sanitizeStrings({ ...DEFAULT_ACADEMIC_COVER, ...parsed }, DEFAULT_ACADEMIC_COVER);
         setAcademicCoverData(merged);
         setEditingAcademicCoverData(merged);
       } catch (e) {
@@ -1827,7 +1808,18 @@ export default function App() {
             parsed.layoutOrder = ['sys-header', 'sys-divider', 'sys-content', ...(parsed.blocks || []).map((b: any) => b.id)];
           }
           const defaultData = id === 'acknowledgment' ? DEFAULT_ACKNOWLEDGEMENT : id === 'dedication' ? DEFAULT_DEDICATION : DEFAULT_GENERIC_SECTION;
-          const merged = { ...defaultData, ...parsed };
+          
+          const sanitizeStrings = (obj: any, defaults: any) => {
+            const res = { ...obj };
+            Object.keys(defaults).forEach(key => {
+              if (typeof defaults[key] === 'string' && typeof res[key] === 'object') {
+                res[key] = defaults[key];
+              }
+            });
+            return res;
+          };
+
+          const merged = sanitizeStrings({ ...defaultData, ...parsed }, defaultData);
           const state = getSectionState(id as SectionId);
           if (state) {
             state[1](merged);
@@ -2115,17 +2107,21 @@ export default function App() {
             content = editingData.headerImage;
             type = 'image';
         }
-        else if (itemId === 'sys-title') content = editingData.title;
-        else if (itemId === 'sys-subtitle') content = editingData.subtitle;
-        else if (itemId === 'sys-desc') content = editingData.description;
-        else if (itemId === 'sys-student') content = `${editingData.studentName}\n${editingData.courseYearSection}`;
-        else if (itemId === 'sys-professor') content = editingData.professorName;
-        else if (itemId === 'sys-ay') content = editingData.academicYear;
+        else if (itemId === 'sys-title') content = String(editingData.title).includes('[object Object]') ? DEFAULT_TITLE_DATA.title : editingData.title;
+        else if (itemId === 'sys-subtitle') content = String(editingData.subtitle).includes('[object Object]') ? DEFAULT_TITLE_DATA.subtitle : editingData.subtitle;
+        else if (itemId === 'sys-desc') content = String(editingData.description).includes('[object Object]') ? DEFAULT_TITLE_DATA.description : editingData.description;
+        else if (itemId === 'sys-student') {
+          const sName = String(editingData.studentName).includes('[object Object]') ? DEFAULT_TITLE_DATA.studentName : editingData.studentName;
+          const cYS = String(editingData.courseYearSection).includes('[object Object]') ? DEFAULT_TITLE_DATA.courseYearSection : editingData.courseYearSection;
+          content = `${sName}\n${cYS}`;
+        }
+        else if (itemId === 'sys-professor') content = String(editingData.professorName).includes('[object Object]') ? DEFAULT_TITLE_DATA.professorName : editingData.professorName;
+        else if (itemId === 'sys-ay') content = String(editingData.academicYear).includes('[object Object]') ? DEFAULT_TITLE_DATA.academicYear : editingData.academicYear;
         else if (itemId === 'sys-divider') content = '---';
         alignment = editingData.alignment || 'center';
     } else if (currentSection === 'cover-page') {
-        if (itemId === 'sys-label') content = editingAcademicCoverData.label;
-        else if (itemId === 'sys-heading') content = editingAcademicCoverData.heading;
+        if (itemId === 'sys-label') content = String(editingAcademicCoverData.label).includes('[object Object]') ? DEFAULT_ACADEMIC_COVER.label : editingAcademicCoverData.label;
+        else if (itemId === 'sys-heading') content = String(editingAcademicCoverData.heading).includes('[object Object]') ? DEFAULT_ACADEMIC_COVER.heading : editingAcademicCoverData.heading;
         else if (itemId === 'sys-p1') content = editingAcademicCoverData.paragraph1;
         else if (itemId === 'sys-p2') content = editingAcademicCoverData.paragraph2;
         else if (itemId === 'sys-divider') content = '---';
@@ -2856,19 +2852,7 @@ export default function App() {
                                         onChange={(e) => setEditingData({ ...editingData, courseYearSection: e.target.value })}
                                       />
                                     </div>
-                                    <div className="flex flex-col gap-2">
-                                        <div className="flex items-center gap-2 px-2 border-l border-gray-100">
-                                          <span className="text-[10px] font-black text-gray-400">Scale</span>
-                                          <input 
-                                            type="range"
-                                            min="20"
-                                            max="100"
-                                            step="5"
-                                            value={100}
-                                            onChange={(e) => {}}
-                                            className="w-16 h-1 bg-gray-100 rounded-lg appearance-none cursor-pointer accent-black"
-                                          />
-                                        </div>
+                                   <div className="flex flex-col gap-2">
                                         <button onClick={() => duplicateSystemItem(itemId)} className="p-3 text-neutral-400 hover:text-black hover:bg-neutral-50 rounded-xl transition-all" title="Duplicate Element"><Copy size={24} /></button>
                                         <button onClick={() => removeBlock(itemId)} className="p-3 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all" title="Remove Student Info"><Trash2 size={24} /></button>
                                     </div>
@@ -3168,7 +3152,7 @@ export default function App() {
                     (isEditing ? (getSectionState(currentSection)?.[2] as any) : (getSectionState(currentSection)?.[0] as any))?.alignment === 'left' ? 'items-start text-left'
                     : (isEditing ? (getSectionState(currentSection)?.[2] as any) : (getSectionState(currentSection)?.[0] as any))?.alignment === 'right' ? 'items-end text-right'
                     : 'items-center text-center'
-                  }`} style={{ width: `${(isEditing ? (getSectionState(currentSection)?.[2] as any) : (getSectionState(currentSection)?.[0] as any))?.width || 100}%` }}>
+                  }`}>
                     {(isEditing ? (getSectionState(currentSection)?.[2] as any)?.layoutOrder : (getSectionState(currentSection)?.[0] as any)?.layoutOrder)?.map((itemId: string, index: number) => {
                       const data = isEditing ? (getSectionState(currentSection)?.[2] as any) : (getSectionState(currentSection)?.[0] as any);
                       if (!data) return null;
@@ -3176,6 +3160,9 @@ export default function App() {
                       const isEven = index % 2 === 0;
 
                       if (itemId.startsWith('sys-header')) {
+                         const sectionLabel = SECTIONS.find(s => s.id === currentSection)?.label.replace(/^\d+\.\s*/, '') || 
+                         SECTIONS.flatMap(s => s.subItems || []).find(sub => sub.id === currentSection)?.label;
+                         
                          return (
                           <motion.div
                             key={itemId}
@@ -3187,14 +3174,28 @@ export default function App() {
                           >
                             <SortableItem id={itemId} editMode={isEditing}>
                               <div className="space-y-6 w-full relative group/sys z-10">
-                                <h1 className={`text-[clamp(1.5rem,7.5vw,5rem)] font-black font-display uppercase tracking-[-0.04em] leading-tight w-full px-2 sm:px-4 ${
-                                  data.alignment === 'left' ? 'text-left' 
-                                  : data.alignment === 'right' ? 'text-right' 
-                                  : 'text-center'
-                                }`}>
-                                  {SECTIONS.find(s => s.id === currentSection)?.label.replace(/^\d+\.\s*/, '') || 
-                                   SECTIONS.flatMap(s => s.subItems || []).find(sub => sub.id === currentSection)?.label}
-                                </h1>
+                                {isEditing ? (
+                                  <input
+                                    className={`w-full bg-transparent border-b-2 border-dashed border-gray-200 outline-none text-[clamp(1.5rem,7.5vw,5rem)] font-black font-display uppercase tracking-[-0.04em] leading-tight focus:border-black transition-all ${
+                                      data.alignment === 'left' ? 'text-left' 
+                                      : data.alignment === 'right' ? 'text-right' 
+                                      : 'text-center'
+                                    }`}
+                                    value={data.customHeader || sectionLabel}
+                                    onChange={(e) => {
+                                      const state = getSectionState(currentSection);
+                                      if (state) state[3](prev => ({ ...prev, customHeader: e.target.value }));
+                                    }}
+                                  />
+                                ) : (
+                                  <h1 className={`text-[clamp(1.5rem,7.5vw,5rem)] font-black font-display uppercase tracking-[-0.04em] leading-tight w-full px-2 sm:px-4 ${
+                                    data.alignment === 'left' ? 'text-left' 
+                                    : data.alignment === 'right' ? 'text-right' 
+                                    : 'text-center'
+                                  }`}>
+                                    {data.customHeader || sectionLabel}
+                                  </h1>
+                                )}
                                 {isEditing && (
                                   <div className="absolute -top-12 right-0 flex items-center gap-2 z-20">
                                     <button 
@@ -3583,33 +3584,6 @@ export default function App() {
                   </div>
                   
                     <div className="space-y-6">
-                      <div className="space-y-4">
-                        <span className="text-[9px] font-black uppercase tracking-[0.2em] opacity-40">Section Content Width</span>
-                        <div className="flex items-center gap-4 p-4 bg-neutral-50 rounded-2xl">
-                          <span className="text-[10px] font-black text-neutral-400 w-12">{
-                            currentSection === 'title-page' ? (editingData.width || 100)
-                            : currentSection === 'cover-page' ? (editingAcademicCoverData.width || 100)
-                            : 100
-                          }%</span>
-                          <input 
-                            type="range"
-                            min="20"
-                            max="100"
-                            step="5"
-                            value={
-                              currentSection === 'title-page' ? (editingData.width || 100)
-                              : currentSection === 'cover-page' ? (editingAcademicCoverData.width || 100)
-                              : 100
-                            }
-                            onChange={(e) => {
-                              const val = parseInt(e.target.value);
-                              if (currentSection === 'title-page') setEditingData(prev => ({ ...prev, width: val }));
-                              else if (currentSection === 'cover-page') setEditingAcademicCoverData(prev => ({ ...prev, width: val }));
-                            }}
-                            className="flex-1 h-1 bg-neutral-200 rounded-lg appearance-none cursor-pointer accent-black"
-                          />
-                        </div>
-                      </div>
 
                       <div className="space-y-4">
                       <span className="text-[9px] font-black uppercase tracking-[0.2em] opacity-40">Alignment</span>
