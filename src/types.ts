@@ -31,6 +31,8 @@ export interface ContentBlock {
   content: string;
   alignment: 'left' | 'center' | 'right';
   pillars?: PillarCard[];
+  caption?: string;
+  captionPosition?: 'top' | 'bottom' | 'left' | 'right';
 }
 
 export interface PillarCard {

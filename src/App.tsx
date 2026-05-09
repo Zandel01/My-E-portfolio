@@ -1080,6 +1080,30 @@ function SortableBlock({ block, editMode, onUpdate, onRemove, onDuplicate, imgbb
     right: 'text-right flex flex-col items-end',
   }[block.alignment];
 
+  const captionPosition = block.captionPosition || 'bottom';
+  const isHorizontal = captionPosition === 'left' || captionPosition === 'right';
+
+  const CaptionInput = () => (
+    <div className={`w-full ${isHorizontal ? 'max-w-xs' : 'w-full'}`}>
+      <textarea
+        className="w-full p-4 border-2 border-dashed border-gray-100 rounded-2xl focus:border-black focus:bg-white outline-none bg-transparent resize-none text-center transition-all text-sm font-medium placeholder:text-gray-300 whitespace-pre-wrap"
+        placeholder="Add caption text here..."
+        value={block.caption || ''}
+        onChange={(e) => onUpdate(block.id, { caption: e.target.value })}
+        rows={2}
+      />
+    </div>
+  );
+
+  const CaptionDisplay = () => (
+    block.caption ? (
+      <div className={`${isHorizontal ? 'max-w-xs' : 'w-full'} ${block.alignment === 'center' ? 'text-center' : block.alignment === 'right' ? 'text-right' : 'text-left'}`}>
+        <p className="text-black/60 text-sm md:text-base leading-relaxed font-medium whitespace-pre-wrap italic">
+          {block.caption}
+        </p>
+      </div>
+    ) : null
+  );
 
   return (
     <div 
@@ -1115,6 +1139,23 @@ function SortableBlock({ block, editMode, onUpdate, onRemove, onDuplicate, imgbb
             >
               <Copy size={20} />
             </button>
+            {(block.type === 'image' || block.type === 'video') && (
+              <div className="flex items-center gap-0.5 border-l border-gray-100 pl-1">
+                {(['top', 'bottom', 'left', 'right'] as const).map(pos => (
+                  <button
+                    key={pos}
+                    onClick={() => onUpdate(block.id, { captionPosition: pos })}
+                    className={`p-1.5 rounded-lg transition-all ${block.captionPosition === pos ? 'bg-black text-white' : 'text-gray-400 hover:text-black hover:bg-gray-50'}`}
+                    title={`Caption ${pos}`}
+                  >
+                    {pos === 'top' && <ArrowUpCircle size={16} />}
+                    {pos === 'bottom' && <ArrowDownCircle size={16} />}
+                    {pos === 'left' && <ArrowLeftCircle size={16} />}
+                    {pos === 'right' && <ArrowRightCircle size={16} />}
+                  </button>
+                ))}
+              </div>
+            )}
             <button 
               onClick={() => onRemove(block.id)}
               className="p-2 hover:bg-red-50 text-red-500 rounded-lg"
@@ -1195,8 +1236,8 @@ function SortableBlock({ block, editMode, onUpdate, onRemove, onDuplicate, imgbb
       )}
 
       {block.type === 'image' && (
-        <div className="w-full flex flex-col items-center gap-6">
-          <div className="w-full flex justify-center">
+        <div className={`flex w-full ${isHorizontal ? 'flex-row' : 'flex-col'} ${captionPosition === 'top' || captionPosition === 'left' ? 'flex-col-reverse flex-row-reverse' : ''} gap-6 items-center`}>
+          <div className={`${isHorizontal ? 'flex-1' : 'w-full'} flex ${alignmentClasses}`}>
             {editMode ? (
               <div className="w-full">
                 {!block.content ? (
@@ -1292,13 +1333,16 @@ function SortableBlock({ block, editMode, onUpdate, onRemove, onDuplicate, imgbb
               )
             )}
           </div>
+          <div className={`${isHorizontal ? 'w-auto' : 'w-full'} flex ${alignmentClasses}`}>
+            {editMode ? <CaptionInput /> : <CaptionDisplay />}
+          </div>
         </div>
       )}
 
       {block.type === 'video' && (
-        <div className="w-full flex flex-col items-center gap-6">
+        <div className={`flex w-full ${isHorizontal ? 'flex-row' : 'flex-col'} ${captionPosition === 'top' || captionPosition === 'left' ? 'flex-col-reverse flex-row-reverse' : ''} gap-6 items-center`}>
           <div 
-            className="w-full aspect-video bg-gray-50 rounded-[3rem] overflow-hidden shadow-2xl flex items-center justify-center border border-gray-100 group/video relative"
+            className={`${isHorizontal ? 'flex-1' : 'w-full'} aspect-video bg-gray-50 rounded-[3rem] overflow-hidden shadow-2xl flex items-center justify-center border border-gray-100 group/video relative`}
           >
             {editMode ? (
               <div className="p-12 w-full max-w-md text-center space-y-6">
@@ -1334,6 +1378,9 @@ function SortableBlock({ block, editMode, onUpdate, onRemove, onDuplicate, imgbb
                 </div>
               )
             )}
+          </div>
+          <div className={`${isHorizontal ? 'w-auto' : 'w-full'} flex ${alignmentClasses}`}>
+            {editMode ? <CaptionInput /> : <CaptionDisplay />}
           </div>
         </div>
       )}
