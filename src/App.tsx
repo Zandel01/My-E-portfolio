@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import LZString from 'lz-string';
+import { db } from './firebase';
+import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 import { 
   Menu, X, Pencil, Save, RotateCcw, ChevronRight, 
   Type, Image as ImageIcon, Video, Trash2, 
   AlignLeft, AlignCenter, AlignRight, Eye, EyeOff, Plus, RotateCw,
-  GripVertical, Upload, Book, Star, GraduationCap, Lock, Unlock, Share2, Copy, Check, Palette, Link, Globe,
-  Maximize2, Minimize2, ArrowUpCircle, ArrowDownCircle, ArrowLeftCircle, ArrowRightCircle
+  GripVertical, Upload, Book, Star, GraduationCap, Lock, Unlock, Share2, Copy, Check, Palette, Link, Globe
 } from 'lucide-react';
 import { 
   DndContext, 
@@ -57,8 +58,9 @@ const uploadToImgBB = async (file: File, key: string) => {
     if (data.success) {
       return data.data.url;
     } else {
-      console.error("ImgBB Error:", data.error.message);
-      alert(`Cloud Upload Error: ${data.error.message}`);
+      const errorMsg = data?.error?.message || 'Unknown error from ImgBB';
+      console.error("ImgBB Error:", errorMsg);
+      alert(`Cloud Upload Error: ${errorMsg}. Please ensure your ImgBB API key is correct and not at its limit.`);
       return null;
     }
   } catch (error) {
@@ -122,7 +124,6 @@ const DEFAULT_COVER_DATA: CoverPageData = {
 const DEFAULT_TITLE_DATA: TitlePageData = {
   headerImage: '', // User will upload this
   showHeaderImage: true,
-  headerImageWidth: 600,
   title: 'E-Portfolio',
   showTitle: true,
   subtitle: 'in TLE 10',
@@ -157,29 +158,27 @@ const NavSectionItem = ({
   section, 
   isActive, 
   onNavigate,
-  isSidebar = false
+  isSidebar = false,
+  customLabel // New prop
 }: { 
   section: any, 
   isActive: boolean, 
   onNavigate: (id: SectionId) => void,
   isSidebar?: boolean,
-  key?: string | number
+  customLabel?: string // New prop
 }) => {
   const [isHovered, setIsHovered] = useState(false);
 
   // Auto-expand if active subitem is found
   useEffect(() => {
-    const hasActiveSub = section.subItems?.some((sub: any) => {
-      // In a real app we'd compare against currentSection, but we can't easily pass it here without props
-      // However, we receive isActive from parent which is true if subItem is active
-      return false; // placeholder, we'll use isActive
-    });
     if (isActive && section.subItems) {
       setIsHovered(true);
     }
   }, [isActive, section.subItems]);
 
   const isFolderOnly = ['department-background', 'subject-teachers', 'subject-inclusions', 'appendices'].includes(section.id);
+
+  const displayLabel = customLabel || section.label;
 
   return (
     <div 
@@ -214,7 +213,7 @@ const NavSectionItem = ({
             </span>
           )}
           <span className={`${isSidebar ? 'font-black text-xl md:text-2xl tracking-tighter uppercase' : ''}`}>
-            {isSidebar ? section.label.replace(/^\d+\.\s*/, '') : section.label}
+            {isSidebar ? displayLabel.replace(/^\d+\.\s*/, '') : displayLabel}
           </span>
         </div>
         <div className="flex items-center gap-2">
@@ -1237,7 +1236,7 @@ function SortableBlock({ block, editMode, onUpdate, onRemove, onDuplicate, imgbb
 
       {block.type === 'image' && (
         <div className={`flex w-full ${isHorizontal ? 'flex-row' : 'flex-col'} ${captionPosition === 'top' || captionPosition === 'left' ? 'flex-col-reverse flex-row-reverse' : ''} gap-6 items-center`}>
-          <div className={`${isHorizontal ? 'flex-1' : 'w-full'} flex ${alignmentClasses}`}>
+          <div className={`${isHorizontal ? 'flex-1' : 'w-full'} flex ${alignmentClasses} relative group/media-container`}>
             {editMode ? (
               <div className="w-full">
                 {!block.content ? (
@@ -1259,44 +1258,7 @@ function SortableBlock({ block, editMode, onUpdate, onRemove, onDuplicate, imgbb
                       <Upload size={32} />
                     </div>
                     <div className="flex flex-col items-center gap-6 w-full max-w-sm px-6" onClick={e => e.stopPropagation()}>
-                      <div className="w-16 h-16 rounded-full bg-white shadow-lg flex items-center justify-center text-black">
-                        <Upload size={24} />
-                      </div>
-                      <div className="space-y-4 w-full">
-                        <div className="text-center">
-                          <p className="font-black text-black uppercase tracking-widest text-[10px]">Visual Artifact</p>
-                        </div>
-                        <div className="flex flex-col gap-2">
-                          <button 
-                            onClick={() => fileInputRef.current?.click()}
-                            className="w-full py-3 bg-white border border-neutral-100 rounded-xl text-[10px] font-black uppercase tracking-widest text-black hover:bg-neutral-50 transition-all"
-                          >
-                            Select Local File
-                          </button>
-                          <div className="flex gap-2">
-                            <input 
-                              type="text"
-                              placeholder="Paste image URL..."
-                              className="flex-1 px-4 py-3 text-[10px] bg-white border border-neutral-100 rounded-xl outline-none focus:border-black transition-all font-sans text-black"
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter') {
-                                  const val = (e.currentTarget as HTMLInputElement).value;
-                                  if (val) onUpdate(block.id, { content: val });
-                                }
-                              }}
-                            />
-                            <button 
-                              onClick={(e) => {
-                                const input = e.currentTarget.previousElementSibling as HTMLInputElement;
-                                if (input.value) onUpdate(block.id, { content: input.value });
-                              }}
-                              className="px-4 py-3 bg-neutral-900 text-white rounded-xl hover:bg-black transition-all flex items-center justify-center"
-                            >
-                              <Link size={14} />
-                            </button>
-                          </div>
-                        </div>
-                      </div>
+                       {/* Simplified upload UI */}
                     </div>
                     <input 
                       type="file" 
@@ -1313,23 +1275,88 @@ function SortableBlock({ block, editMode, onUpdate, onRemove, onDuplicate, imgbb
                       alt="Preview" 
                       className="w-full h-auto rounded-[2rem] shadow-2xl transition-all" 
                     />
-                    <button 
-                      onClick={() => onUpdate(block.id, { content: '' })}
-                      className="absolute top-4 right-4 bg-white/90 backdrop-blur p-3 rounded-full shadow-2xl transition-opacity hover:bg-red-500 hover:text-white"
-                    >
-                      <X size={20} />
-                    </button>
+                    
+                    {/* Overlay Text Display in Edit Mode */}
+                    {block.overlayText && (
+                      <div className={`absolute p-6 z-10 pointer-events-none w-full ${
+                        block.overlayPosition === 'top-left' ? 'top-0 left-0 text-left'
+                        : block.overlayPosition === 'top-right' ? 'top-0 right-0 text-right'
+                        : block.overlayPosition === 'bottom-left' ? 'bottom-0 left-0 text-left'
+                        : block.overlayPosition === 'bottom-right' ? 'bottom-0 right-0 text-right'
+                        : 'top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center'
+                      }`}>
+                        <span className="bg-black/80 backdrop-blur text-white px-4 py-2 rounded-lg font-bold text-lg inline-block shadow-2xl">
+                          {block.overlayText}
+                        </span>
+                      </div>
+                    )}
+
+                    <div className="absolute top-4 right-4 flex gap-2 opacity-0 group-hover/img-preview:opacity-100 transition-opacity">
+                      <button 
+                        onClick={() => onUpdate(block.id, { content: '' })}
+                        className="bg-white/90 backdrop-blur p-3 rounded-full shadow-2xl transition-all hover:bg-red-500 hover:text-white"
+                        title="Remove Image"
+                      >
+                        <X size={20} />
+                      </button>
+                    </div>
+
+                    {/* Overlay Text Editor */}
+                    <div className="mt-4 p-4 bg-gray-50 rounded-2xl border border-gray-100 space-y-4">
+                      <div className="flex items-center gap-3">
+                         <Type size={16} className="text-gray-400" />
+                         <input 
+                           type="text"
+                           placeholder="Floating Overlay Text..."
+                           value={block.overlayText || ''}
+                           onChange={(e) => onUpdate(block.id, { overlayText: e.target.value })}
+                           className="flex-1 bg-white border border-gray-200 rounded-xl px-4 py-2 text-xs outline-none focus:border-black transition-all"
+                         />
+                      </div>
+                      {block.overlayText && (
+                        <div className="flex items-center gap-2 justify-center">
+                          {(['top-left', 'top-right', 'center', 'bottom-left', 'bottom-right'] as const).map(pos => (
+                            <button
+                              key={pos}
+                              onClick={() => onUpdate(block.id, { overlayPosition: pos })}
+                              className={`px-3 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest transition-all ${block.overlayPosition === pos ? 'bg-black text-white' : 'bg-white text-gray-400 border border-gray-100 hover:border-gray-300'}`}
+                            >
+                              {pos.replace('-', ' ')}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
               </div>
             ) : (
               block.content && (
-                <img 
-                  src={block.content} 
-                  alt="" 
-                  className="h-auto rounded-[2.5rem] shadow-[0_40px_100px_-20px_rgba(0,0,0,0.3)] w-full" 
-                  loading="lazy" 
-                />
+                <div className="relative w-full group/view-media">
+                  <img 
+                    src={block.content} 
+                    alt="" 
+                    className="h-auto rounded-[2.5rem] shadow-[0_40px_100px_-20px_rgba(0,0,0,0.3)] w-full transition-transform duration-700 group-hover/view-media:scale-[1.02]" 
+                    loading="lazy" 
+                  />
+                  {block.overlayText && (
+                    <div className={`absolute p-8 z-10 pointer-events-none w-full flex ${
+                      block.overlayPosition === 'top-left' ? 'top-0 left-0 justify-start'
+                      : block.overlayPosition === 'top-right' ? 'top-0 right-0 justify-end'
+                      : block.overlayPosition === 'bottom-left' ? 'bottom-0 left-0 justify-start items-end'
+                      : block.overlayPosition === 'bottom-right' ? 'bottom-0 right-0 justify-end items-end'
+                      : 'top-0 left-0 w-full h-full justify-center items-center'
+                    }`}>
+                      <motion.span 
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        className="bg-black/60 backdrop-blur-md text-white/90 px-8 py-4 rounded-[2rem] font-black text-2xl sm:text-4xl uppercase tracking-tighter shadow-2xl border border-white/10"
+                      >
+                        {block.overlayText}
+                      </motion.span>
+                    </div>
+                  )}
+                </div>
               )
             )}
           </div>
@@ -1359,18 +1386,64 @@ function SortableBlock({ block, editMode, onUpdate, onRemove, onDuplicate, imgbb
                   value={block.content}
                   onChange={(e) => onUpdate(block.id, { content: e.target.value })}
                 />
+                
+                {/* Overlay Text Editor for Video */}
+                <div className="mt-4 p-4 bg-white/50 backdrop-blur rounded-2xl border border-gray-100 space-y-4">
+                  <div className="flex items-center gap-3">
+                     <Type size={16} className="text-gray-400" />
+                     <input 
+                       type="text"
+                       placeholder="Video Overlay Text..."
+                       value={block.overlayText || ''}
+                       onChange={(e) => onUpdate(block.id, { overlayText: e.target.value })}
+                       className="flex-1 bg-white border border-gray-200 rounded-xl px-4 py-2 text-xs outline-none focus:border-black transition-all"
+                     />
+                  </div>
+                  {block.overlayText && (
+                    <div className="flex items-center gap-2 justify-center">
+                      {(['top-left', 'top-right', 'center', 'bottom-left', 'bottom-right'] as const).map(pos => (
+                        <button
+                          key={pos}
+                          onClick={() => onUpdate(block.id, { overlayPosition: pos })}
+                          className={`px-3 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest transition-all ${block.overlayPosition === pos ? 'bg-black text-white' : 'bg-white text-gray-400 border border-gray-100 hover:border-gray-300'}`}
+                        >
+                          {pos.replace('-', ' ')}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             ) : (
               getYoutubeId(block.content) ? (
-                <iframe
-                  width="100%"
-                  height="100%"
-                  src={`https://www.youtube.com/embed/${getYoutubeId(block.content)}`}
-                  title="YouTube video player"
-                  frameBorder="0"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                ></iframe>
+                <div className="relative w-full h-full group/view-video">
+                  <iframe
+                    width="100%"
+                    height="100%"
+                    src={`https://www.youtube.com/embed/${getYoutubeId(block.content)}`}
+                    title="YouTube video player"
+                    frameBorder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  ></iframe>
+                  {block.overlayText && (
+                    <div className={`absolute p-8 z-10 pointer-events-none w-full h-full top-0 left-0 flex ${
+                      block.overlayPosition === 'top-left' ? 'justify-start items-start'
+                      : block.overlayPosition === 'top-right' ? 'justify-end items-start'
+                      : block.overlayPosition === 'bottom-left' ? 'justify-start items-end'
+                      : block.overlayPosition === 'bottom-right' ? 'justify-end items-end'
+                      : 'justify-center items-center'
+                    }`}>
+                      <motion.span 
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        whileInView={{ opacity: 1, scale: 1 }}
+                        className="bg-black/60 backdrop-blur-md text-white px-8 py-4 rounded-2xl font-black text-xl sm:text-3xl uppercase tracking-widest shadow-2xl border border-white/10"
+                      >
+                        {block.overlayText}
+                      </motion.span>
+                    </div>
+                  )}
+                </div>
               ) : (
                 <div className="text-gray-300 flex flex-col items-center">
                   <Video size={80} className="opacity-10" />
@@ -1615,6 +1688,7 @@ export default function App() {
   const [hasCopied, setHasCopied] = useState(false);
   const [shareUrl, setShareUrl] = useState('');
   const [isUrlTooLarge, setIsUrlTooLarge] = useState(false);
+  const [isLoadingShared, setIsLoadingShared] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
 
   const bgFileInputRef = useRef<HTMLInputElement>(null);
@@ -1680,83 +1754,109 @@ export default function App() {
   );
 
   useEffect(() => {
-    // Check for shared data in URL
-    const urlParams = new URLSearchParams(window.location.search);
-    const sharedData = urlParams.get('data');
+    const handleUrlData = async () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const sharedData = urlParams.get('data');
+      const sharedId = urlParams.get('id');
 
-    if (sharedData) {
-      try {
-        const decompressed = LZString.decompressFromEncodedURIComponent(sharedData);
-        if (decompressed) {
-          const parsed = JSON.parse(decompressed);
-          
-          if (parsed) {
-            const sanitizeStrings = (obj: any, defaults: any) => {
-              const res = { ...obj };
-              Object.keys(defaults).forEach(key => {
-                if (typeof defaults[key] === 'string' && typeof res[key] === 'object') {
-                  res[key] = defaults[key];
-                }
-              });
-              return res;
-            };
+      let rawData = null;
 
-            if (parsed.titlePage) { 
-              const data = sanitizeStrings(parsed.titlePage, DEFAULT_TITLE_DATA);
-              setTitlePageData(data); setEditingData(data); 
-            }
-            if (parsed.coverPage) { 
-              const data = sanitizeStrings(parsed.coverPage, DEFAULT_COVER_DATA);
-              setCoverPageData(data); setEditingCoverData(data); 
-            }
-            if (parsed.academicCover) { 
-              const data = sanitizeStrings(parsed.academicCover, DEFAULT_ACADEMIC_COVER);
-              setAcademicCoverData(data); setEditingAcademicCoverData(data); 
-            }
-            if (parsed.acknowledgement) { 
-              const data = sanitizeStrings(parsed.acknowledgement, DEFAULT_ACKNOWLEDGEMENT);
-              setAcknowledgement(data); setEditingAcknowledgement(data); 
-            }
-            if (parsed.dedication) { 
-              const data = sanitizeStrings(parsed.dedication, DEFAULT_DEDICATION);
-              setDedication(data); setEditingDedication(data); 
-            }
-            if (parsed.philosophy) { setPhilosophy(parsed.philosophy); setEditingPhilosophy(parsed.philosophy); }
-            if (parsed.cv) { setCV(parsed.cv); setEditingCV(parsed.cv); }
-            if (parsed.achievements) { setAchievements(parsed.achievements); setEditingAchievements(parsed.achievements); }
-            if (parsed.seminars) { setSeminars(parsed.seminars); setEditingSeminars(parsed.seminars); }
-            if (parsed.deptBackground) { setDeptBackground(parsed.deptBackground); setEditingDeptBackground(parsed.deptBackground); }
-            if (parsed.teachers) { setTeachers(parsed.teachers); setEditingTeachers(parsed.teachers); }
-            if (parsed.inclusions) { setInclusions(parsed.inclusions); setEditingInclusions(parsed.inclusions); }
-            if (parsed.appendices) { setAppendices(parsed.appendices); setEditingAppendices(parsed.appendices); }
-            if (parsed.premises) { setPremises(parsed.premises); setEditingPremises(parsed.premises); }
-            if (parsed.logo) { setLogo(parsed.logo); setEditingLogo(parsed.logo); }
-            if (parsed.introHistory) { setIntroHistory(parsed.introHistory); setEditingIntroHistory(parsed.introHistory); }
-            if (parsed.missionVision) { setMissionVision(parsed.missionVision); setEditingMissionVision(parsed.missionVision); }
-            if (parsed.orgStructure) { setOrgStructure(parsed.orgStructure); setEditingOrgStructure(parsed.orgStructure); }
-            if (parsed.subjectsTaught) { setSubjectsTaught(parsed.subjectsTaught); setEditingSubjectsTaught(parsed.subjectsTaught); }
-            if (parsed.messageTeachers) { setMessageTeachers(parsed.messageTeachers); setEditingMessageTeachers(parsed.messageTeachers); }
-            if (parsed.quizzes) { setQuizzes(parsed.quizzes); setEditingQuizzes(parsed.quizzes); }
-            if (parsed.activities) { setActivities(parsed.activities); setEditingActivities(parsed.activities); }
-            if (parsed.lessonPlan) { setLessonPlan(parsed.lessonPlan); setEditingLessonPlan(parsed.lessonPlan); }
-            if (parsed.instructionalMaterials) { setInstructionalMaterials(parsed.instructionalMaterials); setEditingInstructionalMaterials(parsed.instructionalMaterials); }
-            if (parsed.extracurricular) { setExtracurricular(parsed.extracurricular); setEditingExtracurricular(parsed.extracurricular); }
-            if (parsed.evidence) { setEvidence(parsed.evidence); setEditingEvidence(parsed.evidence); }
-  
-            if (parsed.appSettings) {
-              setAppSettings(parsed.appSettings);
-              setEditingAppSettings(parsed.appSettings);
+      if (sharedId) {
+        setIsLoadingShared(true);
+        try {
+          const docRef = doc(db, 'portfolios', sharedId);
+          const docSnap = await getDoc(docRef);
+          if (docSnap.exists()) {
+            rawData = docSnap.data().compressedData;
+          } else {
+            alert("Shared portfolio not found. It may have expired or the link is incorrect.");
+          }
+        } catch (error) {
+          console.error("Error loading shared portfolio:", error);
+          alert("Failed to load shared portfolio from cloud.");
+        } finally {
+          setIsLoadingShared(false);
+        }
+      } else if (sharedData) {
+        rawData = sharedData;
+      }
+
+      if (rawData) {
+        try {
+          const decompressed = LZString.decompressFromEncodedURIComponent(rawData);
+          if (decompressed) {
+            const parsed = JSON.parse(decompressed);
+            
+            if (parsed) {
+              const sanitizeStrings = (obj: any, defaults: any) => {
+                const res = { ...obj };
+                Object.keys(defaults).forEach(key => {
+                  if (typeof defaults[key] === 'string' && typeof res[key] === 'object') {
+                    res[key] = defaults[key];
+                  }
+                });
+                return res;
+              };
+
+              if (parsed.titlePage) { 
+                const data = sanitizeStrings(parsed.titlePage, DEFAULT_TITLE_DATA);
+                setTitlePageData(data); setEditingData(data); 
+              }
+              if (parsed.coverPage) { 
+                const data = sanitizeStrings(parsed.coverPage, DEFAULT_COVER_DATA);
+                setCoverPageData(data); setEditingCoverData(data); 
+              }
+              if (parsed.academicCover) { 
+                const data = sanitizeStrings(parsed.academicCover, DEFAULT_ACADEMIC_COVER);
+                setAcademicCoverData(data); setEditingAcademicCoverData(data); 
+              }
+              if (parsed.acknowledgement) { 
+                const data = sanitizeStrings(parsed.acknowledgement, DEFAULT_ACKNOWLEDGEMENT);
+                setAcknowledgement(data); setEditingAcknowledgement(data); 
+              }
+              if (parsed.dedication) { 
+                const data = sanitizeStrings(parsed.dedication, DEFAULT_DEDICATION);
+                setDedication(data); setEditingDedication(data); 
+              }
+              if (parsed.philosophy) { setPhilosophy(parsed.philosophy); setEditingPhilosophy(parsed.philosophy); }
+              if (parsed.cv) { setCV(parsed.cv); setEditingCV(parsed.cv); }
+              if (parsed.achievements) { setAchievements(parsed.achievements); setEditingAchievements(parsed.achievements); }
+              if (parsed.seminars) { setSeminars(parsed.seminars); setEditingSeminars(parsed.seminars); }
+              if (parsed.deptBackground) { setDeptBackground(parsed.deptBackground); setEditingDeptBackground(parsed.deptBackground); }
+              if (parsed.teachers) { setTeachers(parsed.teachers); setEditingTeachers(parsed.teachers); }
+              if (parsed.inclusions) { setInclusions(parsed.inclusions); setEditingInclusions(parsed.inclusions); }
+              if (parsed.appendices) { setAppendices(parsed.appendices); setEditingAppendices(parsed.appendices); }
+              if (parsed.premises) { setPremises(parsed.premises); setEditingPremises(parsed.premises); }
+              if (parsed.logo) { setLogo(parsed.logo); setEditingLogo(parsed.logo); }
+              if (parsed.introHistory) { setIntroHistory(parsed.introHistory); setEditingIntroHistory(parsed.introHistory); }
+              if (parsed.missionVision) { setMissionVision(parsed.missionVision); setEditingMissionVision(parsed.missionVision); }
+              if (parsed.orgStructure) { setOrgStructure(parsed.orgStructure); setEditingOrgStructure(parsed.orgStructure); }
+              if (parsed.subjectsTaught) { setSubjectsTaught(parsed.subjectsTaught); setEditingSubjectsTaught(parsed.subjectsTaught); }
+              if (parsed.messageTeachers) { setMessageTeachers(parsed.messageTeachers); setEditingMessageTeachers(parsed.messageTeachers); }
+              if (parsed.quizzes) { setQuizzes(parsed.quizzes); setEditingQuizzes(parsed.quizzes); }
+              if (parsed.activities) { setActivities(parsed.activities); setEditingActivities(parsed.activities); }
+              if (parsed.lessonPlan) { setLessonPlan(parsed.lessonPlan); setEditingLessonPlan(parsed.lessonPlan); }
+              if (parsed.instructionalMaterials) { setInstructionalMaterials(parsed.instructionalMaterials); setEditingInstructionalMaterials(parsed.instructionalMaterials); }
+              if (parsed.extracurricular) { setExtracurricular(parsed.extracurricular); setEditingExtracurricular(parsed.extracurricular); }
+              if (parsed.evidence) { setEvidence(parsed.evidence); setEditingEvidence(parsed.evidence); }
+    
+              if (parsed.appSettings) {
+                setAppSettings(parsed.appSettings);
+                setEditingAppSettings(parsed.appSettings);
+              }
+
+              // Clear URL parameter so refreshing doesn't keep loading old shared data if they edit later
+              window.history.replaceState({}, document.title, window.location.pathname);
+              return;
             }
           }
-          
-          // Clear URL parameter so refreshing doesn't keep loading old shared data if they edit later
-          window.history.replaceState({}, document.title, window.location.pathname);
-          return; // Skip loading from localStorage if we have shared data
+        } catch (e) {
+          console.error("Failed to load/parse data", e);
         }
-      } catch (e) {
-        console.error('Failed to parse shared data from URL', e);
       }
-    }
+    };
+    
+    handleUrlData();
 
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
@@ -1967,7 +2067,7 @@ export default function App() {
     setHasUnlocked(false);
   };
 
-  const generateShareLink = () => {
+  const generateShareLink = async () => {
     // If we are editing, we should use the current editing states to ensure the share link reflects 
     // the EXACT state the user sees on screen, even if they haven't clicked "Save All" yet.
     const allData: any = {
@@ -2002,13 +2102,31 @@ export default function App() {
 
     const compressed = LZString.compressToEncodedURIComponent(JSON.stringify(allData));
     
-    // Most browsers/servers have a limit around 8k-16k characters. 
-    const tooLarge = compressed.length > 8000;
-    setIsUrlTooLarge(tooLarge);
-    
-    const url = `${window.location.origin}${window.location.pathname}?data=${compressed}`;
-    setShareUrl(url);
     setIsSharing(true);
+    setShareUrl('Generating link...');
+    
+    try {
+      // Create a unique ID for this share
+      const shareId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+      
+      // Save to Firestore
+      await setDoc(doc(db, 'portfolios', shareId), {
+        compressedData: compressed,
+        createdAt: serverTimestamp()
+      });
+      
+      const url = `${window.location.origin}${window.location.pathname}?id=${shareId}`;
+      setShareUrl(url);
+      setIsUrlTooLarge(false);
+    } catch (error) {
+      console.error("Firestore Share Error:", error);
+      // Fallback to URL-based share if Firestore fails
+      const tooLarge = compressed.length > 8000;
+      setIsUrlTooLarge(tooLarge);
+      const url = `${window.location.origin}${window.location.pathname}?data=${compressed}`;
+      setShareUrl(url);
+    }
+    
     setHasCopied(false); 
   };
 
@@ -2481,6 +2599,23 @@ export default function App() {
       <div className="fixed inset-0 z-[-1] bg-white/20 backdrop-blur-[2px]" />
 
       <AnimatePresence mode="wait">
+        {isLoadingShared && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[9999] bg-white/90 backdrop-blur-xl flex flex-col items-center justify-center space-y-8"
+          >
+            <div className="relative">
+              <div className="w-24 h-24 border-4 border-neutral-100 rounded-full animate-pulse" />
+              <div className="absolute inset-0 w-24 h-24 border-t-4 border-black rounded-full animate-spin" />
+            </div>
+            <div className="text-center space-y-2">
+              <h3 className="text-2xl font-black uppercase tracking-widest animate-pulse">Syncing Cloud Data</h3>
+              <p className="text-neutral-400 font-medium uppercase text-[10px] tracking-[0.3em]">Preparing your custom portfolio experience...</p>
+            </div>
+          </motion.div>
+        )}
         {isLoading ? (
           <LoadingScreen 
             key="loader"
@@ -2558,6 +2693,7 @@ export default function App() {
                                     key={s.id}
                                     section={s}
                                     isActive={(currentSection === s.id && view === 'view2') || (s.id === 'title-page' && view === 'view1') || s.subItems?.some(sub => sub.id === currentSection) === true}
+                                    customLabel={getSectionState(s.id)?.[2]?.customHeader}
                                     onNavigate={(id) => {
                                       navigateTo(id);
                                       setIsPagesMenuOpen(false);
@@ -2637,8 +2773,7 @@ export default function App() {
                                        <img 
                                          src={editingData.headerImage} 
                                          alt="Header" 
-                                         className="max-h-[300px] w-auto h-auto object-contain shadow-2xl rounded-2xl"
-                                         style={{ maxWidth: `${editingData.headerImageWidth}px` }}
+                                         className="max-h-[300px] w-full h-auto object-contain shadow-2xl rounded-2xl"
                                        />
                                        <button 
                                          onClick={() => setEditingData({ ...editingData, headerImage: '' })}
@@ -2727,8 +2862,7 @@ export default function App() {
                                    <img 
                                      src={data.headerImage} 
                                      alt="Header" 
-                                     className="max-h-[400px] w-auto h-auto object-contain"
-                                     style={{ maxWidth: `${data.headerImageWidth}px` }}
+                                     className="max-h-[400px] w-full h-auto object-contain"
                                    />
                                  )
                                )}
@@ -3222,18 +3356,19 @@ export default function App() {
                             <SortableItem id={itemId} editMode={isEditing}>
                               <div className="space-y-6 w-full relative group/sys z-10">
                                 {isEditing ? (
-                                  <input
-                                    className={`w-full bg-transparent border-b-2 border-dashed border-gray-200 outline-none text-[clamp(1.5rem,7.5vw,5rem)] font-black font-display uppercase tracking-[-0.04em] leading-tight focus:border-black transition-all ${
-                                      data.alignment === 'left' ? 'text-left' 
-                                      : data.alignment === 'right' ? 'text-right' 
-                                      : 'text-center'
-                                    }`}
-                                    value={data.customHeader || sectionLabel}
-                                    onChange={(e) => {
-                                      const state = getSectionState(currentSection);
-                                      if (state) state[3](prev => ({ ...prev, customHeader: e.target.value }));
-                                    }}
-                                  />
+                                    <input
+                                      className={`w-full bg-transparent border-b-2 border-dashed border-gray-200 outline-none text-[clamp(1.5rem,7.5vw,5rem)] font-black font-display uppercase tracking-[-0.04em] leading-tight focus:border-black transition-all ${
+                                        data.alignment === 'left' ? 'text-left' 
+                                        : data.alignment === 'right' ? 'text-right' 
+                                        : 'text-center'
+                                      }`}
+                                      value={data.customHeader === undefined ? sectionLabel : data.customHeader}
+                                      onChange={(e) => {
+                                        const state = getSectionState(currentSection);
+                                        if (state) state[3](prev => ({ ...prev, customHeader: e.target.value }));
+                                      }}
+                                      placeholder={sectionLabel || ''}
+                                    />
                                 ) : (
                                   <h1 className={`text-[clamp(1.5rem,7.5vw,5rem)] font-black font-display uppercase tracking-[-0.04em] leading-tight w-full px-2 sm:px-4 ${
                                     data.alignment === 'left' ? 'text-left' 
@@ -3419,6 +3554,7 @@ export default function App() {
                           key={section.id}
                           section={section}
                           isActive={currentSection === section.id || section.subItems?.some(sub => sub.id === currentSection) === true}
+                          customLabel={getSectionState(section.id)?.[2]?.customHeader}
                           onNavigate={(id) => {
                             navigateTo(id);
                             setIsSidebarOpen(false);

@@ -1,0 +1,20 @@
+{
+  "entities": {
+    "portfolios": {
+      "title": "Portfolio",
+      "description": "Stored portfolio state for sharing",
+      "type": "object",
+      "properties": {
+        "compressedData": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["compressedData", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/portfolios/{portfolioId}": {
+      "schema": "portfolios",
+      "description": "Publicly shared portfolio snapshots"
+    }
+  }
+}

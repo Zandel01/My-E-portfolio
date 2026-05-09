@@ -33,6 +33,8 @@ export interface ContentBlock {
   pillars?: PillarCard[];
   caption?: string;
   captionPosition?: 'top' | 'bottom' | 'left' | 'right';
+  overlayText?: string;
+  overlayPosition?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right' | 'center';
 }
 
 export interface PillarCard {
