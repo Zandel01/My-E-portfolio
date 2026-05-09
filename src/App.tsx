@@ -5,7 +5,8 @@ import {
   Menu, X, Pencil, Save, RotateCcw, ChevronRight, 
   Type, Image as ImageIcon, Video, Trash2, 
   AlignLeft, AlignCenter, AlignRight, Eye, EyeOff, Plus, RotateCw,
-  GripVertical, Upload, Book, Star, GraduationCap, Lock, Unlock, Share2, Copy, Check, Palette, Link, Globe
+  GripVertical, Upload, Book, Star, GraduationCap, Lock, Unlock, Share2, Copy, Check, Palette, Link, Globe,
+  Maximize2, Minimize2, ArrowUpCircle, ArrowDownCircle, ArrowLeftCircle, ArrowRightCircle
 } from 'lucide-react';
 import { 
   DndContext, 
@@ -632,7 +633,7 @@ const AcademicCoverPage = ({
       data.alignment === 'left' ? 'items-start text-left'
       : data.alignment === 'right' ? 'items-end text-right'
       : 'items-center text-center'
-    }`}>
+    }`} style={{ width: `${data.width || 100}%` }}>
       {data.layoutOrder.map((itemId, index) => {
         const isEven = index % 2 === 0;
 
@@ -700,7 +701,7 @@ const AcademicCoverPage = ({
                         value={data.heading}
                         onChange={(e) => onUpdate({ heading: e.target.value })}
                       />
-                      <div className="flex items-center gap-2">
+<div className="flex gap-2 items-center">
                         <button 
                           onClick={() => onDuplicateSystem(itemId)}
                           className="p-2 text-neutral-400 hover:text-black transition-all"
@@ -740,7 +741,7 @@ const AcademicCoverPage = ({
               <SortableItem id={itemId} editMode={isEditing}>
                 <div className="relative group/sys w-full flex flex-col items-center py-4 sm:py-8 transition-all">
                   <div className="w-16 sm:w-24 h-1.5 sm:h-2 bg-black rounded-full shadow-sm" />
-                  <div className="absolute -right-16 top-1/2 -translate-y-1/2 flex flex-col gap-2 transition-all">
+                  <div className="absolute -top-12 right-0 flex items-center gap-2 transition-all">
                     <button 
                       onClick={() => onDuplicateSystem(itemId)}
                       className="p-2 text-neutral-400 hover:text-black hover:bg-neutral-50 rounded-lg transition-all"
@@ -796,7 +797,7 @@ const AcademicCoverPage = ({
                       </button>
                     </div>
                   ) : (
-                    <p className={`text-lg sm:text-2xl text-black leading-relaxed italic ${data.alignment === 'center' ? 'text-center' : data.alignment === 'right' ? 'text-right' : 'text-left'}`}>
+                    <p className={`text-lg sm:text-2xl text-black leading-relaxed italic whitespace-pre-wrap ${data.alignment === 'center' ? 'text-center' : data.alignment === 'right' ? 'text-right' : 'text-left'}`}>
                       {data.paragraph1}
                     </p>
                   )}
@@ -826,7 +827,7 @@ const AcademicCoverPage = ({
                         onChange={(e) => onUpdate({ paragraph2: e.target.value })}
                         rows={6}
                       />
-                      <div className="flex flex-col gap-2">
+                      <div className="flex gap-2">
                         <button 
                           onClick={() => onDuplicateSystem(itemId)}
                           className="self-start p-3 text-neutral-400 hover:text-black hover:bg-neutral-50 rounded-xl transition-all"
@@ -843,7 +844,7 @@ const AcademicCoverPage = ({
                       </div>
                     </div>
                   ) : (
-                    <p className={`text-lg text-black leading-[1.8] font-sans opacity-90 decoration-neutral-100 ${data.alignment === 'left' ? 'text-left' : data.alignment === 'right' ? 'text-right' : 'text-left sm:text-justify'}`}>
+                    <p className={`text-lg text-black leading-[1.8] font-sans opacity-90 decoration-neutral-100 whitespace-pre-wrap ${data.alignment === 'left' ? 'text-left' : data.alignment === 'right' ? 'text-right' : 'text-left sm:text-justify'}`}>
                       {data.paragraph2}
                     </p>
                   )}
@@ -1079,11 +1080,38 @@ function SortableBlock({ block, editMode, onUpdate, onRemove, onDuplicate, imgbb
     right: 'text-right flex flex-col items-end',
   }[block.alignment];
 
+  const captionPosition = block.captionPosition || 'bottom';
+  const isHorizontal = captionPosition === 'left' || captionPosition === 'right';
+
+  const CaptionInput = () => (
+    <div className={`w-full ${isHorizontal ? 'max-w-xs' : 'w-full'}`}>
+      <textarea
+        className="w-full p-4 border-2 border-dashed border-gray-100 rounded-2xl focus:border-black focus:bg-white outline-none bg-transparent resize-none text-center transition-all text-sm font-medium placeholder:text-gray-300 whitespace-pre-wrap"
+        placeholder="Add caption text here..."
+        value={block.caption || ''}
+        onChange={(e) => onUpdate(block.id, { caption: e.target.value })}
+        rows={2}
+      />
+    </div>
+  );
+
+  const CaptionDisplay = () => (
+    block.caption ? (
+      <div className={`${isHorizontal ? 'max-w-xs' : 'w-full'} ${block.alignment === 'center' ? 'text-center' : block.alignment === 'right' ? 'text-right' : 'text-left'}`}>
+        <p className="text-black/60 text-sm md:text-base leading-relaxed font-medium whitespace-pre-wrap italic">
+          {block.caption}
+        </p>
+      </div>
+    ) : null
+  );
+
+  const currentWidth = block.width || 100;
+
   return (
     <div 
       ref={setNodeRef} 
       style={style} 
-      className={`group relative w-full ${alignmentClasses} space-y-2 py-4 ${editMode ? 'hover:bg-gray-50/50 rounded-2xl px-4 ring-1 ring-transparent hover:ring-gray-200 transition-all' : ''}`}
+      className={`group relative w-full ${alignmentClasses} space-y-4 py-4 ${editMode ? 'hover:bg-gray-50/50 rounded-2xl px-4 ring-1 ring-transparent hover:ring-gray-200 transition-all' : ''}`}
     >
       {editMode && (
         <div className="absolute -top-6 left-2 right-2 sm:left-auto sm:right-2 flex items-center justify-between sm:justify-end gap-1 bg-white shadow-2xl border border-gray-100 rounded-xl p-1.5 z-20">
@@ -1096,6 +1124,18 @@ function SortableBlock({ block, editMode, onUpdate, onRemove, onDuplicate, imgbb
             <GripVertical size={20} />
           </button>
           <div className="flex items-center gap-1">
+            <div className="flex items-center gap-2 px-2 border-l border-gray-100">
+              <span className="text-[10px] font-black text-gray-400 w-8">{currentWidth}%</span>
+              <input 
+                type="range"
+                min="20"
+                max="100"
+                step="5"
+                value={currentWidth}
+                onChange={(e) => onUpdate(block.id, { width: parseInt(e.target.value) })}
+                className="w-20 h-1 bg-gray-100 rounded-lg appearance-none cursor-pointer accent-black"
+              />
+            </div>
             <button 
               onClick={() => {
                 const next: Record<string, 'left' | 'center' | 'right'> = { left: 'center', center: 'right', right: 'left' };
@@ -1113,6 +1153,23 @@ function SortableBlock({ block, editMode, onUpdate, onRemove, onDuplicate, imgbb
             >
               <Copy size={20} />
             </button>
+            {(block.type === 'image' || block.type === 'video') && (
+              <div className="flex items-center gap-0.5 border-l border-gray-100 pl-1">
+                {(['top', 'bottom', 'left', 'right'] as const).map(pos => (
+                  <button
+                    key={pos}
+                    onClick={() => onUpdate(block.id, { captionPosition: pos })}
+                    className={`p-1.5 rounded-lg transition-all ${block.captionPosition === pos ? 'bg-black text-white' : 'text-gray-400 hover:text-black hover:bg-gray-50'}`}
+                    title={`Caption ${pos}`}
+                  >
+                    {pos === 'top' && <ArrowUpCircle size={16} />}
+                    {pos === 'bottom' && <ArrowDownCircle size={16} />}
+                    {pos === 'left' && <ArrowLeftCircle size={16} />}
+                    {pos === 'right' && <ArrowRightCircle size={16} />}
+                  </button>
+                ))}
+              </div>
+            )}
             <button 
               onClick={() => onRemove(block.id)}
               className="p-2 hover:bg-red-50 text-red-500 rounded-lg"
@@ -1177,139 +1234,173 @@ function SortableBlock({ block, editMode, onUpdate, onRemove, onDuplicate, imgbb
       {block.type === 'text' && !block.pillars && (
         editMode ? (
           <textarea
-            className="w-full p-6 border-2 border-dashed border-gray-200 rounded-2xl focus:border-black focus:bg-white outline-none bg-transparent resize-none text-center transition-all text-xl font-medium placeholder:text-gray-300"
+            className="w-full p-6 border-2 border-dashed border-gray-200 rounded-2xl focus:border-black focus:bg-white outline-none bg-transparent resize-none text-center transition-all text-xl font-medium placeholder:text-gray-300 whitespace-pre-wrap"
             placeholder="Type your content here..."
+            style={{ maxWidth: `${currentWidth}%` }}
             value={block.content}
             onChange={(e) => onUpdate(block.id, { content: e.target.value })}
             rows={2}
           />
         ) : (
-          <p className="text-black whitespace-pre-wrap text-xl md:text-2xl leading-relaxed font-medium">{block.content}</p>
+          <p 
+            className="text-black whitespace-pre-wrap text-xl md:text-2xl leading-relaxed font-medium"
+            style={{ width: `${currentWidth}%` }}
+          >
+            {block.content}
+          </p>
         )
       )}
 
       {block.type === 'image' && (
-        editMode ? (
-          <div className="w-full max-w-2xl">
-            {!block.content ? (
-              <div 
-                onClick={() => fileInputRef.current?.click()}
-                onDragOver={(e) => e.preventDefault()}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  const file = e.dataTransfer.files[0];
-                  if (file && file.type.startsWith('image/')) {
-                    const reader = new FileReader();
-                    reader.onloadend = () => onUpdate(block.id, { content: reader.result as string });
-                    reader.readAsDataURL(file);
-                  }
-                }}
-                className="w-full aspect-video border-2 border-dashed border-gray-200 rounded-[2.5rem] flex flex-col items-center justify-center gap-6 hover:border-black hover:bg-white transition-all cursor-pointer text-gray-400 group/upload bg-gray-50/50"
-              >
-                <div className="w-20 h-20 rounded-full bg-white shadow-lg flex items-center justify-center group-hover/upload:scale-110 transition-transform text-black">
-                  <Upload size={32} />
-                </div>
-                <div className="flex flex-col items-center gap-6 w-full max-w-sm px-6" onClick={e => e.stopPropagation()}>
-                  <div className="w-16 h-16 rounded-full bg-white shadow-lg flex items-center justify-center text-black">
-                    <Upload size={24} />
-                  </div>
-                  <div className="space-y-4 w-full">
-                    <div className="text-center">
-                      <p className="font-black text-black uppercase tracking-widest text-[10px]">Visual Artifact</p>
+        <div className={`flex w-full ${isHorizontal ? 'flex-row' : 'flex-col'} ${captionPosition === 'top' || captionPosition === 'left' ? 'flex-col-reverse flex-row-reverse text-neutral-100' : ''} gap-6 items-center`}>
+          <div className={`${isHorizontal ? 'flex-1' : 'w-full'} flex ${alignmentClasses}`}>
+            {editMode ? (
+              <div className="w-full" style={{ maxWidth: `${currentWidth}%` }}>
+                {!block.content ? (
+                  <div 
+                    onClick={() => fileInputRef.current?.click()}
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      const file = e.dataTransfer.files[0];
+                      if (file && file.type.startsWith('image/')) {
+                        const reader = new FileReader();
+                        reader.onloadend = () => onUpdate(block.id, { content: reader.result as string });
+                        reader.readAsDataURL(file);
+                      }
+                    }}
+                    className="w-full aspect-video border-2 border-dashed border-gray-200 rounded-[2.5rem] flex flex-col items-center justify-center gap-6 hover:border-black hover:bg-white transition-all cursor-pointer text-gray-400 group/upload bg-gray-50/50"
+                  >
+                    <div className="w-20 h-20 rounded-full bg-white shadow-lg flex items-center justify-center group-hover/upload:scale-110 transition-transform text-black">
+                      <Upload size={32} />
                     </div>
-                    <div className="flex flex-col gap-2">
-                      <button 
-                        onClick={() => fileInputRef.current?.click()}
-                        className="w-full py-3 bg-white border border-neutral-100 rounded-xl text-[10px] font-black uppercase tracking-widest text-black hover:bg-neutral-50 transition-all"
-                      >
-                        Select Local File
-                      </button>
-                      <div className="flex gap-2">
-                        <input 
-                          type="text"
-                          placeholder="Paste image URL..."
-                          className="flex-1 px-4 py-3 text-[10px] bg-white border border-neutral-100 rounded-xl outline-none focus:border-black transition-all font-sans text-black"
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                              const val = (e.currentTarget as HTMLInputElement).value;
-                              if (val) onUpdate(block.id, { content: val });
-                            }
-                          }}
-                        />
-                        <button 
-                          onClick={(e) => {
-                            const input = e.currentTarget.previousElementSibling as HTMLInputElement;
-                            if (input.value) onUpdate(block.id, { content: input.value });
-                          }}
-                          className="px-4 py-3 bg-neutral-900 text-white rounded-xl hover:bg-black transition-all flex items-center justify-center"
-                        >
-                          <Link size={14} />
-                        </button>
+                    <div className="flex flex-col items-center gap-6 w-full max-w-sm px-6" onClick={e => e.stopPropagation()}>
+                      <div className="w-16 h-16 rounded-full bg-white shadow-lg flex items-center justify-center text-black">
+                        <Upload size={24} />
+                      </div>
+                      <div className="space-y-4 w-full">
+                        <div className="text-center">
+                          <p className="font-black text-black uppercase tracking-widest text-[10px]">Visual Artifact</p>
+                        </div>
+                        <div className="flex flex-col gap-2">
+                          <button 
+                            onClick={() => fileInputRef.current?.click()}
+                            className="w-full py-3 bg-white border border-neutral-100 rounded-xl text-[10px] font-black uppercase tracking-widest text-black hover:bg-neutral-50 transition-all"
+                          >
+                            Select Local File
+                          </button>
+                          <div className="flex gap-2">
+                            <input 
+                              type="text"
+                              placeholder="Paste image URL..."
+                              className="flex-1 px-4 py-3 text-[10px] bg-white border border-neutral-100 rounded-xl outline-none focus:border-black transition-all font-sans text-black"
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  const val = (e.currentTarget as HTMLInputElement).value;
+                                  if (val) onUpdate(block.id, { content: val });
+                                }
+                              }}
+                            />
+                            <button 
+                              onClick={(e) => {
+                                const input = e.currentTarget.previousElementSibling as HTMLInputElement;
+                                if (input.value) onUpdate(block.id, { content: input.value });
+                              }}
+                              className="px-4 py-3 bg-neutral-900 text-white rounded-xl hover:bg-black transition-all flex items-center justify-center"
+                            >
+                              <Link size={14} />
+                            </button>
+                          </div>
+                        </div>
                       </div>
                     </div>
+                    <input 
+                      type="file" 
+                      ref={fileInputRef} 
+                      className="hidden" 
+                      accept="image/*" 
+                      onChange={handleFileUpload} 
+                    />
                   </div>
-                </div>
-                <input 
-                  type="file" 
-                  ref={fileInputRef} 
-                  className="hidden" 
-                  accept="image/*" 
-                  onChange={handleFileUpload} 
-                />
+                ) : (
+                  <div className="relative group/img-preview inline-block w-full">
+                    <img 
+                      src={block.content} 
+                      alt="Preview" 
+                      className="w-full h-auto rounded-[2rem] shadow-2xl transition-all" 
+                      style={{ maxWidth: '100%' }}
+                    />
+                    <button 
+                      onClick={() => onUpdate(block.id, { content: '' })}
+                      className="absolute top-4 right-4 bg-white/90 backdrop-blur p-3 rounded-full shadow-2xl transition-opacity hover:bg-red-500 hover:text-white"
+                    >
+                      <X size={20} />
+                    </button>
+                  </div>
+                )}
               </div>
             ) : (
-              <div className="relative group/img-preview inline-block max-w-full">
-                <img src={block.content} alt="Preview" className="max-w-full h-auto rounded-[2rem] shadow-2xl transition-all" />
-                <button 
-                  onClick={() => onUpdate(block.id, { content: '' })}
-                  className="absolute top-4 right-4 bg-white/90 backdrop-blur p-3 rounded-full shadow-2xl transition-opacity hover:bg-red-500 hover:text-white"
-                >
-                  <X size={20} />
-                </button>
-              </div>
+              block.content && (
+                <img 
+                  src={block.content} 
+                  alt="" 
+                  className="h-auto rounded-[2.5rem] shadow-[0_40px_100px_-20px_rgba(0,0,0,0.3)]" 
+                  style={{ width: `${currentWidth}%`, maxWidth: '100%' }} 
+                  loading="lazy" 
+                />
+              )
             )}
           </div>
-        ) : (
-          block.content && <img src={block.content} alt="" className="max-w-full h-auto rounded-[2.5rem] shadow-[0_40px_100px_-20px_rgba(0,0,0,0.3)]" loading="lazy" />
-        )
+          <div className={`${isHorizontal ? 'w-auto' : 'w-full'} flex ${alignmentClasses}`}>
+            {editMode ? <CaptionInput /> : <CaptionDisplay />}
+          </div>
+        </div>
       )}
 
       {block.type === 'video' && (
-        <div className="w-full max-w-4xl aspect-video bg-gray-50 rounded-[3rem] overflow-hidden shadow-2xl flex items-center justify-center border border-gray-100 group/video relative">
-          {editMode ? (
-            <div className="p-12 w-full max-w-md text-center space-y-6">
-               <div className="w-20 h-20 rounded-full bg-red-50 text-red-500 mx-auto flex items-center justify-center shadow-inner">
-                  <Video size={40} />
-               </div>
-               <div className="space-y-2">
-                 <p className="font-black uppercase tracking-widest text-sm">Video Artifact</p>
-                 <p className="text-xs text-gray-400 font-medium">Link should be: https://youtube.com/watch?v=...</p>
-               </div>
-               <input
-                className="w-full p-5 text-sm border-2 border-gray-200 rounded-2xl focus:border-red-500 outline-none bg-white transition-all shadow-sm font-medium"
-                placeholder="Paste YouTube Link Here"
-                value={block.content}
-                onChange={(e) => onUpdate(block.id, { content: e.target.value })}
-              />
-            </div>
-          ) : (
-            getYoutubeId(block.content) ? (
-              <iframe
-                width="100%"
-                height="100%"
-                src={`https://www.youtube.com/embed/${getYoutubeId(block.content)}`}
-                title="YouTube video player"
-                frameBorder="0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-              ></iframe>
-            ) : (
-              <div className="text-gray-300 flex flex-col items-center">
-                <Video size={80} className="opacity-10" />
-                <span className="text-xl font-black mt-4 opacity-20 uppercase tracking-[0.3em]">No Video Loaded</span>
+        <div className={`flex w-full ${isHorizontal ? 'flex-row' : 'flex-col'} ${captionPosition === 'top' || captionPosition === 'left' ? 'flex-col-reverse flex-row-reverse' : ''} gap-6 items-center`}>
+          <div 
+            className={`${isHorizontal ? 'flex-1' : 'w-full'} aspect-video bg-gray-50 rounded-[3rem] overflow-hidden shadow-2xl flex items-center justify-center border border-gray-100 group/video relative`}
+            style={{ maxWidth: `${currentWidth}%` }}
+          >
+            {editMode ? (
+              <div className="p-12 w-full max-w-md text-center space-y-6">
+                 <div className="w-20 h-20 rounded-full bg-red-50 text-red-500 mx-auto flex items-center justify-center shadow-inner">
+                    <Video size={40} />
+                 </div>
+                 <div className="space-y-2">
+                   <p className="font-black uppercase tracking-widest text-sm">Video Artifact</p>
+                   <p className="text-xs text-gray-400 font-medium">Link should be: https://youtube.com/watch?v=...</p>
+                 </div>
+                 <input
+                  className="w-full p-5 text-sm border-2 border-gray-200 rounded-2xl focus:border-red-500 outline-none bg-white transition-all shadow-sm font-medium"
+                  placeholder="Paste YouTube Link Here"
+                  value={block.content}
+                  onChange={(e) => onUpdate(block.id, { content: e.target.value })}
+                />
               </div>
-            )
-          )}
+            ) : (
+              getYoutubeId(block.content) ? (
+                <iframe
+                  width="100%"
+                  height="100%"
+                  src={`https://www.youtube.com/embed/${getYoutubeId(block.content)}`}
+                  title="YouTube video player"
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                ></iframe>
+              ) : (
+                <div className="text-gray-300 flex flex-col items-center">
+                  <Video size={80} className="opacity-10" />
+                  <span className="text-xl font-black mt-4 opacity-20 uppercase tracking-[0.3em]">No Video Loaded</span>
+                </div>
+              )
+            )}
+          </div>
+          <div className={`${isHorizontal ? 'w-auto' : 'w-full'} flex ${alignmentClasses}`}>
+            {editMode ? <CaptionInput /> : <CaptionDisplay />}
+          </div>
         </div>
       )}
     </div>
@@ -2664,7 +2755,7 @@ export default function App() {
                                   <button onClick={() => removeBlock(itemId)} className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all" title="Remove Subtitle"><Trash2 size={20} /></button>
                                 </div>
                               ) : (
-                                <p className="text-sm sm:text-lg md:text-2xl text-black font-medium leading-tight text-balance px-4 opacity-80 uppercase tracking-widest">
+                                <p className="text-sm sm:text-lg md:text-2xl text-black font-medium leading-tight text-balance px-4 opacity-80 uppercase tracking-widest whitespace-pre-wrap">
                                   {data.subtitle}
                                 </p>
                               )}
@@ -2696,7 +2787,7 @@ export default function App() {
                                   <button onClick={() => removeBlock(itemId)} className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all" title="Remove Meta"><Trash2 size={16} /></button>
                                 </div>
                               ) : (
-                                <p className="text-[9px] sm:text-base md:text-xl text-black tracking-[0.1em] sm:tracking-[0.2em] uppercase font-black leading-tight text-balance px-4 opacity-70">
+                                <p className="text-[9px] sm:text-base md:text-xl text-black tracking-[0.1em] sm:tracking-[0.2em] uppercase font-black leading-tight text-balance px-4 opacity-70 whitespace-pre-wrap">
                                   {data.description}
                                 </p>
                               )}
@@ -2717,7 +2808,7 @@ export default function App() {
                             >
                               <div className="w-16 sm:w-24 h-1.5 sm:h-2 bg-black mx-auto rounded-full shadow-sm mb-4 sm:mb-8" />
                               {isEditing && (
-                                <div className="absolute -right-12 top-1/2 -translate-y-1/2 flex flex-col gap-2">
+                                <div className="absolute -top-12 right-0 flex items-center gap-2">
                                   <button onClick={() => duplicateSystemItem(itemId)} className="p-2 text-neutral-400 hover:text-black hover:bg-neutral-50 rounded-lg transition-all" title="Duplicate Divider"><Copy size={16} /></button>
                                   <button onClick={() => removeBlock(itemId)} className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"><Trash2 size={16} /></button>
                                 </div>
@@ -2766,14 +2857,26 @@ export default function App() {
                                       />
                                     </div>
                                     <div className="flex flex-col gap-2">
+                                        <div className="flex items-center gap-2 px-2 border-l border-gray-100">
+                                          <span className="text-[10px] font-black text-gray-400">Scale</span>
+                                          <input 
+                                            type="range"
+                                            min="20"
+                                            max="100"
+                                            step="5"
+                                            value={100}
+                                            onChange={(e) => {}}
+                                            className="w-16 h-1 bg-gray-100 rounded-lg appearance-none cursor-pointer accent-black"
+                                          />
+                                        </div>
                                         <button onClick={() => duplicateSystemItem(itemId)} className="p-3 text-neutral-400 hover:text-black hover:bg-neutral-50 rounded-xl transition-all" title="Duplicate Element"><Copy size={24} /></button>
                                         <button onClick={() => removeBlock(itemId)} className="p-3 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all" title="Remove Student Info"><Trash2 size={24} /></button>
                                     </div>
                                   </div>
                                 ) : (
                                   <div className="px-4">
-                                    {data.showStudentName && <p className="text-[clamp(1rem,5vw,2rem)] sm:text-lg md:text-3xl font-black tracking-tighter break-words text-black mb-1 leading-tight">{String(data.studentName).includes('[object Object]') ? 'Student Name' : data.studentName}</p>}
-                                    {data.showCourseYearSection && <p className="text-[8px] uppercase tracking-[0.1em] sm:tracking-[0.15em] sm:text-xs font-black mt-1 text-black opacity-60">{String(data.courseYearSection).includes('[object Object]') ? 'Course / Year / Section' : data.courseYearSection}</p>}
+                                    {data.showStudentName && <p className="text-[clamp(1rem,5vw,2rem)] sm:text-lg md:text-3xl font-black tracking-tighter break-words text-black mb-1 leading-tight whitespace-pre-wrap">{String(data.studentName).includes('[object Object]') ? 'Student Name' : data.studentName}</p>}
+                                    {data.showCourseYearSection && <p className="text-[8px] uppercase tracking-[0.1em] sm:tracking-[0.15em] sm:text-xs font-black mt-1 text-black opacity-60 whitespace-pre-wrap">{String(data.courseYearSection).includes('[object Object]') ? 'Course / Year / Section' : data.courseYearSection}</p>}
                                   </div>
                                 )}
                               </div>
@@ -2820,7 +2923,7 @@ export default function App() {
                                 </div>
                               ) : (
                                 <div className="px-4">
-                                  {data.showProfessorName && <p className="text-[clamp(0.9rem,4.5vw,1.8rem)] sm:text-lg md:text-2xl font-black tracking-tighter break-words text-black leading-tight">{String(data.professorName).includes('[object Object]') ? "Professor's Name" : data.professorName}</p>}
+                                  {data.showProfessorName && <p className="text-[clamp(0.9rem,4.5vw,1.8rem)] sm:text-lg md:text-2xl font-black tracking-tighter break-words text-black leading-tight whitespace-pre-wrap">{String(data.professorName).includes('[object Object]') ? "Professor's Name" : data.professorName}</p>}
                                 </div>
                               )}
                             </motion.div>
@@ -3065,7 +3168,7 @@ export default function App() {
                     (isEditing ? (getSectionState(currentSection)?.[2] as any) : (getSectionState(currentSection)?.[0] as any))?.alignment === 'left' ? 'items-start text-left'
                     : (isEditing ? (getSectionState(currentSection)?.[2] as any) : (getSectionState(currentSection)?.[0] as any))?.alignment === 'right' ? 'items-end text-right'
                     : 'items-center text-center'
-                  }`}>
+                  }`} style={{ width: `${(isEditing ? (getSectionState(currentSection)?.[2] as any) : (getSectionState(currentSection)?.[0] as any))?.width || 100}%` }}>
                     {(isEditing ? (getSectionState(currentSection)?.[2] as any)?.layoutOrder : (getSectionState(currentSection)?.[0] as any)?.layoutOrder)?.map((itemId: string, index: number) => {
                       const data = isEditing ? (getSectionState(currentSection)?.[2] as any) : (getSectionState(currentSection)?.[0] as any);
                       if (!data) return null;
@@ -3093,7 +3196,7 @@ export default function App() {
                                    SECTIONS.flatMap(s => s.subItems || []).find(sub => sub.id === currentSection)?.label}
                                 </h1>
                                 {isEditing && (
-                                  <div className="absolute -right-12 top-1/2 -translate-y-1/2 flex flex-col gap-2 z-20">
+                                  <div className="absolute -top-12 right-0 flex items-center gap-2 z-20">
                                     <button 
                                       onClick={() => duplicateSystemItem(itemId)}
                                       className="p-3 text-neutral-400 hover:text-black hover:bg-neutral-50 rounded-xl transition-all"
@@ -3129,7 +3232,7 @@ export default function App() {
                               <div className="relative group/sys w-full flex flex-col items-center py-4 sm:py-8 transition-all">
                                 <div className="w-16 sm:w-24 h-1.5 sm:h-2 bg-black rounded-full shadow-sm" />
                                 {isEditing && (
-                                  <div className="absolute -right-16 top-1/2 -translate-y-1/2 flex flex-col gap-2 transition-all">
+                                  <div className="absolute -top-12 right-0 flex items-center gap-2 transition-all">
                                     <button 
                                       onClick={() => duplicateSystemItem(itemId)}
                                       className="p-2 text-neutral-400 hover:text-black hover:bg-neutral-50 rounded-lg transition-all"
@@ -3178,24 +3281,13 @@ export default function App() {
                                         }}
                                         rows={8}
                                       />
-                                      <div className="flex flex-col gap-2">
-                                        <button 
-                                          onClick={() => duplicateSystemItem(itemId)}
-                                          className="p-3 text-neutral-400 hover:text-black hover:bg-neutral-50 rounded-xl transition-all"
-                                          title="Duplicate Element"
-                                        >
-                                          <Copy size={24} />
-                                        </button>
-                                        <button 
-                                          onClick={() => removeBlock(itemId)}
-                                          className="p-3 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
-                                        >
-                                          <Trash2 size={24} />
-                                        </button>
+                                    <div className="flex gap-2">
+                                        <button onClick={() => duplicateSystemItem(itemId)} className="p-3 text-neutral-400 hover:text-black hover:bg-neutral-50 rounded-xl transition-all" title="Duplicate Element"><Copy size={24} /></button>
+                                        <button onClick={() => removeBlock(itemId)} className="p-3 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all" title="Remove Element"><Trash2 size={24} /></button>
                                       </div>
                                     </div>
                                   ) : (
-                                  <p className={`text-lg sm:text-2xl md:text-4xl text-black font-medium leading-relaxed italic px-4 sm:px-12 break-words w-full mx-auto max-w-4xl tracking-tight ${
+                                  <p className={`text-lg sm:text-2xl md:text-4xl text-black font-medium leading-relaxed italic px-4 sm:px-12 break-words w-full mx-auto max-w-4xl tracking-tight whitespace-pre-wrap ${
                                     data.alignment === 'left' ? 'text-left'
                                     : data.alignment === 'right' ? 'text-right'
                                     : 'text-center sm:text-justify'
@@ -3490,8 +3582,36 @@ export default function App() {
                     <div className="flex-1 h-[1px] bg-neutral-100 ml-6" />
                   </div>
                   
-                  <div className="space-y-6">
-                    <div className="space-y-4">
+                    <div className="space-y-6">
+                      <div className="space-y-4">
+                        <span className="text-[9px] font-black uppercase tracking-[0.2em] opacity-40">Section Content Width</span>
+                        <div className="flex items-center gap-4 p-4 bg-neutral-50 rounded-2xl">
+                          <span className="text-[10px] font-black text-neutral-400 w-12">{
+                            currentSection === 'title-page' ? (editingData.width || 100)
+                            : currentSection === 'cover-page' ? (editingAcademicCoverData.width || 100)
+                            : 100
+                          }%</span>
+                          <input 
+                            type="range"
+                            min="20"
+                            max="100"
+                            step="5"
+                            value={
+                              currentSection === 'title-page' ? (editingData.width || 100)
+                              : currentSection === 'cover-page' ? (editingAcademicCoverData.width || 100)
+                              : 100
+                            }
+                            onChange={(e) => {
+                              const val = parseInt(e.target.value);
+                              if (currentSection === 'title-page') setEditingData(prev => ({ ...prev, width: val }));
+                              else if (currentSection === 'cover-page') setEditingAcademicCoverData(prev => ({ ...prev, width: val }));
+                            }}
+                            className="flex-1 h-1 bg-neutral-200 rounded-lg appearance-none cursor-pointer accent-black"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-4">
                       <span className="text-[9px] font-black uppercase tracking-[0.2em] opacity-40">Alignment</span>
                       <div className="flex p-2 bg-neutral-50 rounded-2xl">
                         {(['left', 'center', 'right'] as const).map(align => {
