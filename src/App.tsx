@@ -743,21 +743,23 @@ const AcademicCoverPage = ({
               <SortableItem id={itemId} editMode={isEditing}>
                 <div className="relative group/sys w-full flex flex-col items-center py-4 sm:py-8 transition-all">
                   <div className="w-16 sm:w-24 h-1.5 sm:h-2 bg-black rounded-full shadow-sm" />
-                  <div className="absolute -top-12 right-0 flex items-center gap-2 transition-all">
-                    <button 
-                      onClick={() => onDuplicateSystem(itemId)}
-                      className="p-2 text-neutral-400 hover:text-black hover:bg-neutral-50 rounded-lg transition-all"
-                      title="Duplicate Element"
-                    >
-                      <Copy size={16} />
-                    </button>
-                    <button 
-                      onClick={() => onRemoveBlock(itemId)}
-                      className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
+                  {isEditing && (
+                    <div className="absolute -top-12 right-0 flex items-center gap-2 transition-all">
+                      <button 
+                        onClick={() => onDuplicateSystem(itemId)}
+                        className="p-2 text-neutral-400 hover:text-black hover:bg-neutral-50 rounded-lg transition-all"
+                        title="Duplicate Element"
+                      >
+                        <Copy size={16} />
+                      </button>
+                      <button 
+                        onClick={() => onRemoveBlock(itemId)}
+                        className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  )}
                 </div>
               </SortableItem>
             </motion.div>
