@@ -2071,8 +2071,7 @@ export default function App() {
   };
 
   const generateShareLink = async () => {
-    // If we are editing, we should use the current editing states to ensure the share link reflects 
-    // the EXACT state the user sees on screen, even if they haven't clicked "Save All" yet.
+    // If we are editing, we should use the current editing states
     const allData: any = {
       titlePage: isEditing ? editingData : titlePageData,
       coverPage: isEditing ? editingCoverData : coverPageData,
@@ -2105,12 +2104,20 @@ export default function App() {
 
     const compressed = LZString.compressToEncodedURIComponent(JSON.stringify(allData));
     
+    // Firestore limit is 1MB. Let's be safe at 900KB.
+    const sizeInBytes = new Blob([compressed]).size;
+    const isTooLargeForFirestore = sizeInBytes > 900 * 1024;
+    
     setIsSharing(true);
-    setShareUrl('Generating link...');
+    setShareUrl('Syncing to cloud...');
     
     try {
+      if (isTooLargeForFirestore) {
+        throw new Error("Portfolio data is too large for cloud sync (Limit: 1MB). Falling back to URL parameters.");
+      }
+
       // Create a unique ID for this share
-      const shareId = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+      const shareId = Math.random().toString(36).substring(2, 10).toUpperCase() + '-' + Math.random().toString(36).substring(2, 6).toUpperCase();
       
       // Save to Firestore
       await setDoc(doc(db, 'portfolios', shareId), {
@@ -2122,10 +2129,10 @@ export default function App() {
       setShareUrl(url);
       setIsUrlTooLarge(false);
     } catch (error) {
-      console.error("Firestore Share Error:", error);
-      // Fallback to URL-based share if Firestore fails
+      console.warn("Firestore Share Note:", error);
+      // Fallback to URL-based share if Firestore fails or data is too large
       const tooLarge = compressed.length > 8000;
-      setIsUrlTooLarge(tooLarge);
+      setIsUrlTooLarge(tooLarge || isTooLargeForFirestore);
       const url = `${window.location.origin}${window.location.pathname}?data=${compressed}`;
       setShareUrl(url);
     }
@@ -2135,24 +2142,26 @@ export default function App() {
 
   const copyToClipboard = async () => {
     try {
-      await navigator.clipboard.writeText(shareUrl);
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(shareUrl);
+      } else {
+        // Fallback for non-secure contexts or older browsers
+        const textArea = document.createElement("textarea");
+        textArea.value = shareUrl;
+        textArea.style.position = "fixed";
+        textArea.style.left = "-9999px";
+        textArea.style.top = "0";
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        document.execCommand('copy');
+        textArea.remove();
+      }
       setHasCopied(true);
-      setTimeout(() => setHasCopied(false), 2000);
+      setTimeout(() => setHasCopied(false), 3000);
     } catch (err) {
       console.error('Failed to copy!', err);
-      // Fallback for older browsers or if navigator.clipboard is blocked
-      const textArea = document.createElement("textarea");
-      textArea.value = shareUrl;
-      document.body.appendChild(textArea);
-      textArea.select();
-      try {
-        document.execCommand('copy');
-        setHasCopied(true);
-        setTimeout(() => setHasCopied(false), 2000);
-      } catch (err) {
-        alert("Failed to copy link. Please manually copy it: " + shareUrl);
-      }
-      document.body.removeChild(textArea);
+      alert("Could not copy link automatically. Please select the link text and copy manually.");
     }
   };
 
@@ -2553,18 +2562,22 @@ export default function App() {
 
         {/* Share & Save Actions */}
         <div className="flex flex-col gap-2 lg:pl-10 lg:border-l lg:border-neutral-100">
-          <span className="text-[7px] sm:text-[10px] font-black uppercase tracking-[0.2em] sm:tracking-[0.3em] text-neutral-300 text-center lg:text-left">Publish</span>
-          <div className="flex items-center justify-center lg:justify-start gap-2">
+          <span className="text-[7px] sm:text-[10px] font-black uppercase tracking-[0.2em] sm:tracking-[0.3em] text-neutral-300 text-center lg:text-left">Publish Artifact</span>
+          <div className="flex items-center justify-center lg:justify-start gap-4">
             <button 
               onClick={generateShareLink}
-              className="flex items-center gap-2 px-6 py-3 bg-black text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-neutral-800 transition-all shadow-lg active:scale-95"
+              className="group relative flex items-center gap-3 px-8 py-4 bg-black text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-neutral-800 transition-all shadow-2xl active:scale-95 overflow-hidden"
             >
-              <Share2 size={14} />
-              Share Publicly
+              <div className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-500" />
+              <Share2 size={16} className="relative z-10" />
+              <span className="relative z-10">Prepare Link</span>
             </button>
-            <p className="text-[7px] text-neutral-400 max-w-[120px] ml-2 leading-tight">
-              Generate a unique link for others to see your work.
-            </p>
+            <div className="hidden sm:block">
+              <p className="text-[8px] font-black uppercase tracking-[0.4em] text-neutral-300 leading-tight">
+                Cloud Sync v3.0<br/>
+                <span className="opacity-40 italic">Active Instance</span>
+              </p>
+            </div>
           </div>
         </div>
       </div>
@@ -3819,9 +3832,7 @@ export default function App() {
     </DndContext>
           </motion.div>
         )}
-      </AnimatePresence>
-
-      {/* Share Modal */}
+      </AnimatePresence>      {/* Redesigned Share Modal */}
       <AnimatePresence>
         {isSharing && (
           <div className="fixed inset-0 z-[6000] flex items-center justify-center p-4">
@@ -3830,99 +3841,127 @@ export default function App() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsSharing(false)}
-              className="absolute inset-0 bg-black/70 backdrop-blur-md"
+              className="absolute inset-0 bg-black/80 backdrop-blur-3xl"
             />
             <motion.div 
-              initial={{ opacity: 0, scale: 0.9, y: 30 }}
+              initial={{ opacity: 0, scale: 0.95, y: 40 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 30 }}
-              className="relative w-full max-w-4xl bg-white rounded-[3rem] shadow-[0_80px_160px_-20px_rgba(0,0,0,0.6)] overflow-hidden border border-neutral-100"
+              exit={{ opacity: 0, scale: 0.95, y: 40 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              className="relative w-full max-w-5xl bg-neutral-900 rounded-[3rem] shadow-[0_100px_200px_-50px_rgba(0,0,0,1)] overflow-hidden border border-white/5"
             >
-              <div className="p-10 sm:p-20 space-y-12">
-                <div className="flex justify-between items-start">
-                  <div className="space-y-4">
-                    <div className="inline-flex items-center gap-2 px-5 py-2 bg-green-500 text-white rounded-full text-[10px] font-black uppercase tracking-[0.2em]">
-                       <Globe size={14} />
-                       Public Link Generated
+              <div className="grid lg:grid-cols-2">
+                {/* Left Side: Celebration / Info */}
+                <div className="p-12 sm:p-20 bg-white space-y-12 flex flex-col justify-between border-r border-neutral-100">
+                  <div className="space-y-8">
+                    <div className="flex justify-between items-start">
+                      <div className="inline-flex items-center gap-3 px-4 py-1.5 bg-neutral-900 text-white rounded-full text-[10px] font-black uppercase tracking-[0.3em]">
+                        <div className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse" />
+                        Cloud Synchronized
+                      </div>
+                      <button 
+                        onClick={() => setIsSharing(false)}
+                        className="p-3 hover:bg-neutral-50 rounded-2xl transition-all text-neutral-300 hover:text-black"
+                      >
+                        <X size={24} />
+                      </button>
                     </div>
-                    <h3 className="text-5xl sm:text-7xl font-black uppercase tracking-tighter leading-[0.9] text-black">Ready to<br/>Impress.</h3>
-                    <p className="text-sm sm:text-leg font-medium text-neutral-400 uppercase tracking-widest max-w-xl leading-relaxed pt-2">
-                      Your portfolio has been synchronized and the public viewer is now ready to see your progress.
-                    </p>
+                    <div className="space-y-4">
+                      <h3 className="text-6xl sm:text-8xl font-black uppercase tracking-tighter leading-[0.85] text-black">
+                        Link<br/>Created.
+                      </h3>
+                      <p className="text-base font-medium text-neutral-400 uppercase tracking-widest max-w-sm leading-relaxed">
+                        Your professional digital artifact is now ready for global viewing.
+                      </p>
+                    </div>
                   </div>
-                  <button 
-                    onClick={() => setIsSharing(false)}
-                    className="p-5 hover:bg-neutral-50 rounded-3xl transition-all"
-                  >
-                    <X size={32} />
-                  </button>
+
+                  <div className="pt-12 border-t border-neutral-50 space-y-4">
+                    <div className="flex items-center gap-4 text-neutral-300">
+                      <Globe size={18} />
+                      <span className="text-[10px] font-black uppercase tracking-[0.2em]">Public Access Enabled</span>
+                    </div>
+                    <div className="flex items-center gap-4 text-neutral-300">
+                      <Check size={18} className="text-green-500" />
+                      <span className="text-[10px] font-black uppercase tracking-[0.2em]">Mobile Optimized Rendering</span>
+                    </div>
+                  </div>
                 </div>
 
-                <div className="grid lg:grid-cols-2 gap-8 items-center">
-                  <div className="space-y-6">
-                    <div className="p-10 bg-neutral-950 rounded-[2.5rem] border border-white/10 shadow-2xl relative overflow-hidden group">
-                      <div className="absolute top-0 right-0 p-6 opacity-10">
-                         <Link size={120} className="text-white" />
+                {/* Right Side: Copy Link UI */}
+                <div className="p-12 sm:p-20 bg-neutral-900 flex flex-col justify-center space-y-12">
+                   <div className="space-y-6">
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase tracking-[0.5em] text-white/30 ml-4">Direct Share URL</label>
+                        <div className="group relative">
+                          <div className="absolute inset-0 bg-white/5 rounded-[2rem] blur-xl opacity-0 group-hover:opacity-100 transition-all duration-500" />
+                          <div className="relative p-8 bg-neutral-800 rounded-[2.5rem] border border-white/5 shadow-2xl overflow-hidden min-h-[140px] flex items-center">
+                            <p className="text-white font-mono text-sm leading-relaxed break-all relative z-10 w-full line-clamp-3">
+                              {shareUrl === 'Syncing to cloud...' ? (
+                                <span className="animate-pulse opacity-50 italic">Drafting unique identifier...</span>
+                              ) : shareUrl}
+                            </p>
+                          </div>
+                        </div>
                       </div>
-                      <span className="text-[10px] font-black uppercase tracking-[0.5em] text-white/40 block mb-6">Snapshot Identifier</span>
-                      <p className="text-white font-mono text-sm break-all line-clamp-4 leading-relaxed relative z-10">
-                        {shareUrl}
-                      </p>
-                    </div>
 
-                    {isUrlTooLarge && (
-                      <div className="p-8 bg-amber-50 rounded-[2rem] border border-amber-100 flex flex-col gap-3">
-                         <div className="flex items-center gap-3">
-                            <div className="p-2 bg-amber-100 rounded-lg text-amber-600">
-                               <Lock size={18} />
-                            </div>
-                            <span className="text-xs font-black uppercase tracking-[0.3em] text-amber-600">Performance Notice</span>
-                         </div>
-                         <p className="text-xs text-amber-900 leading-relaxed font-medium">
-                           This link is currently very large because it contains embedded media. 
-                           To ensure perfect reliability, we recommend using the **Cloud Storage** feature for any future uploads.
-                         </p>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="space-y-6">
-                    <button 
-                      onClick={copyToClipboard}
-                      className={`w-full py-10 rounded-[2.5rem] font-black uppercase tracking-[0.3em] shadow-[0_30px_60px_rgba(0,0,0,0.3)] transition-all flex flex-col items-center justify-center gap-4 text-2xl ${
-                        hasCopied ? 'bg-green-500 scale-[1.02] text-white shadow-green-500/30' : 'bg-black text-white hover:bg-neutral-800'
-                      }`}
-                    >
-                      {hasCopied ? (
-                        <>
-                          <Check size={48} strokeWidth={4} />
-                          <span className="text-base sm:text-xl">Copied Successfully!</span>
-                        </>
-                      ) : (
-                        <>
-                          <Copy size={48} />
-                          <span className="text-base sm:text-xl">Copy Link</span>
-                        </>
+                      {isUrlTooLarge && (
+                        <motion.div 
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className="px-6 py-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl flex items-center gap-4"
+                        >
+                          <Lock size={16} className="text-amber-500 shrink-0" />
+                          <p className="text-[10px] text-amber-500/80 leading-snug font-black uppercase tracking-widest">
+                            Heuristic Warning: Large Artifact Size. Reliability may vary on slower networks.
+                          </p>
+                        </motion.div>
                       )}
-                    </button>
-                    
-                    <div className="bg-neutral-50 p-8 rounded-[2rem] border border-neutral-100">
-                      <p className="text-[9px] font-black uppercase tracking-[0.2em] text-neutral-400 text-center leading-relaxed">
-                        Viewer Status: <span className="text-green-500">Live & Synchronized</span><br/>
-                        <span className="opacity-50">Link reflects your data at {new Date().toLocaleTimeString()}</span>
-                      </p>
-                    </div>
-                  </div>
+                   </div>
+
+                   <div className="space-y-6">
+                      <button 
+                        onClick={copyToClipboard}
+                        disabled={shareUrl === 'Syncing to cloud...'}
+                        className={`w-full py-10 rounded-[2.5rem] font-black uppercase tracking-[0.4em] transition-all duration-500 flex flex-col items-center justify-center gap-4 shadow-2xl disabled:opacity-50 disabled:cursor-wait ${
+                          hasCopied 
+                            ? 'bg-green-500 text-white ring-8 ring-green-500/20' 
+                            : 'bg-white text-black hover:bg-neutral-200 hover:scale-[0.98]'
+                        }`}
+                      >
+                        {hasCopied ? (
+                          <>
+                            <motion.div initial={{ scale: 0.5 }} animate={{ scale: 1 }}>
+                              <Check size={48} strokeWidth={4} />
+                            </motion.div>
+                            <span className="text-base">Successfully Copied</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy size={48} strokeWidth={2.5} />
+                            <span className="text-base">Copy Link</span>
+                          </>
+                        )}
+                      </button>
+
+                      <div className="text-center">
+                        <p className="text-[10px] font-black uppercase tracking-[0.6em] text-white/20">
+                          Expires: <span className="text-white/40">Never (Cloud Permanent)</span>
+                        </p>
+                      </div>
+                   </div>
                 </div>
               </div>
 
-              <div className="bg-neutral-950 px-12 py-10 flex flex-col sm:flex-row justify-between items-center gap-6 border-t border-white/5">
-                <p className="text-[10px] font-black uppercase tracking-[0.4em] text-white/30 leading-relaxed text-center sm:text-left">
-                  Note: This snapshot is immutable. For new changes, click share again.
-                </p>
-                <div className="flex gap-4">
-                   <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                   <span className="text-[10px] font-black uppercase tracking-widest text-white/60">Cloud Sync Active</span>
+              {/* Bottom Bar */}
+              <div className="bg-black/40 px-12 py-6 border-t border-white/5 flex flex-col sm:flex-row justify-between items-center gap-4">
+                <div className="flex gap-4 items-center">
+                  <div className="w-2 h-2 rounded-full bg-blue-500" />
+                  <span className="text-[9px] font-black uppercase tracking-[0.4em] text-white/40">Zandel Ragay Portfolio Engine v3.0</span>
+                </div>
+                <div className="flex gap-8">
+                  <span className="text-[9px] font-black uppercase tracking-[0.4em] text-white/30">Secure Data Pipeline</span>
+                  <span className="text-[9px] font-black uppercase tracking-[0.4em] text-white/30">Immutable Snapshot</span>
                 </div>
               </div>
             </motion.div>
