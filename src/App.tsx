@@ -2151,47 +2151,47 @@ export default function App() {
     setShareUrl('Syncing to cloud...');
     setIsUrlTooLarge(false); // Reset
     
-    try {
-      if (isTooLargeForFirestore) {
-        throw new Error("Data exceeds Cloud Sync limits (1MB). Attempting URL-based share...");
-      }
-
+    // Save to Firestore with a retry mechanism
+    const attemptSync = async (retries = 2): Promise<string> => {
       // Create a super short unique ID for this share (8 characters, alphanumeric)
       const shareId = Array.from({length: 8}, () => Math.random().toString(36)[2]).join('').toUpperCase();
       
-      console.log("Attempting Cloud Sync with ID:", shareId);
+      try {
+        console.log(`Cloud Sync Attempt with ID: ${shareId}. Retries left: ${retries}`);
+        
+        const savePromise = setDoc(doc(db, 'portfolios', shareId), {
+          compressedData: compressed,
+          createdAt: serverTimestamp(),
+          v: 4
+        });
 
-      // Save to Firestore with a timeout
-      const savePromise = setDoc(doc(db, 'portfolios', shareId), {
-        compressedData: compressed,
-        createdAt: serverTimestamp(),
-        v: 3 // Version tracker
-      });
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error("Timeout")), 20000)
+        );
 
-      // Wrap in a timeout for better UX
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error("Cloud sync timed out.")), 15000)
-      );
+        await Promise.race([savePromise, timeoutPromise]);
+        return shareId;
+      } catch (err) {
+        if (retries > 0) return attemptSync(retries - 1);
+        throw err;
+      }
+    };
 
-      await Promise.race([savePromise, timeoutPromise]);
-      
-      // Use 'p' as the short parameter
+    try {
+      if (isTooLargeForFirestore) {
+        throw new Error("Data too large for Cloud Storage.");
+      }
+
+      const shareId = await attemptSync();
       const url = `${window.location.origin}${window.location.pathname}?p=${shareId}`;
       setShareUrl(url);
       console.log("Cloud Sync Success:", url);
     } catch (error: any) {
-      console.warn("Cloud Sync Fallback:", error);
-      
-      // If the URL is extremely long, we should WARN them that it might fail on some browsers
-      const tooLarge = compressed.length > 1800; // Browsers typically limit to 2KB
-      setIsUrlTooLarge(tooLarge || isTooLargeForFirestore);
-      
+      console.warn("Cloud Sync Fallback to URL:", error);
       const url = `${window.location.origin}${window.location.pathname}?data=${compressed}`;
       setShareUrl(url);
-
-      if (tooLarge) {
-        console.error("Critical: Share link is over browser limits. Friends may see errors.");
-      }
+      // We no longer set isUrlTooLarge to true to avoid the red warning
+      setIsUrlTooLarge(false); 
     }
     
     setHasCopied(false); 
@@ -2215,14 +2215,16 @@ export default function App() {
       // 2. Fallback: ExecCommand Copy
       const textArea = document.createElement("textarea");
       textArea.value = shareUrl;
-      textArea.style.position = "absolute";
+      textArea.style.position = "fixed"; // Fixed is better than absolute
       textArea.style.left = "-9999px";
       textArea.style.top = "0";
+      textArea.style.opacity = "0";
       document.body.appendChild(textArea);
       textArea.focus();
       textArea.select();
+      
       const successful = document.execCommand('copy');
-      textArea.remove();
+      document.body.removeChild(textArea);
       
       if (successful) {
         setHasCopied(true);
@@ -2231,16 +2233,16 @@ export default function App() {
         throw new Error("ExecCommand failed");
       }
     } catch (err) {
-      console.error('Failed to copy!', err);
+      console.error('Copy Error:', err);
       // 3. Final Fallback: Manual Selection
-      const input = document.getElementById('share-url-text') as HTMLParagraphElement;
+      const input = document.getElementById('share-url-text');
       if (input) {
         const range = document.createRange();
         range.selectNodeContents(input);
         const selection = window.getSelection();
         selection?.removeAllRanges();
         selection?.addRange(range);
-        alert("Clipboard access is restricted by your browser. We've highlighted the link—please press Ctrl+C or Cmd+C to copy manually.");
+        alert("Clipboard blocked. Link is highlighted—press Ctrl+C / Cmd+C to copy.");
       }
     }
   };
@@ -3988,23 +3990,7 @@ export default function App() {
                         </div>
                       </div>
 
-                        {isUrlTooLarge && (
-                          <motion.div 
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            className="px-6 py-4 bg-red-500/10 border border-red-500/20 rounded-2xl flex items-center gap-4"
-                          >
-                            <Lock size={16} className="text-red-500 shrink-0" />
-                            <div className="space-y-1">
-                              <p className="text-[10px] text-red-500 leading-snug font-black uppercase tracking-widest">
-                                CRITICAL: Link too long for some browsers
-                              </p>
-                              <p className="text-[9px] text-red-500/70 lowercase tracking-normal">
-                                Cloud sync failed & URL exceeds 2KB. Friends might see "I/O errors".
-                              </p>
-                            </div>
-                          </motion.div>
-                        )}
+                        {/* Warning removed as requested */}
                    </div>
 
                    <div className="space-y-6">

@@ -11,10 +11,8 @@ service cloud.firestore {
       allow get: if true;
       
       // Allow anyone to create a new portfolio snapshot
-      // We use create instead of write to prevent overwriting existing portfolios
-      allow create: if request.resource.data.keys().hasAll(['compressedData', 'createdAt'])
-                   && request.resource.data.compressedData is string
-                   && request.resource.data.compressedData.size() < 1048576; // 1MB limit for Firestore docs
+      allow create: if request.resource.data.compressedData is string
+                   && request.resource.data.compressedData.size() < 1048576;
       
       // Do not allow listing all portfolios
       allow list: if false;
