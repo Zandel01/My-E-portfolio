@@ -1760,7 +1760,7 @@ export default function App() {
     const handleUrlData = async () => {
       const urlParams = new URLSearchParams(window.location.search);
       const sharedData = urlParams.get('data');
-      const sharedId = urlParams.get('id');
+      const sharedId = urlParams.get('id') || urlParams.get('p'); // Support both 'id' and 'p' (p is shorter)
 
       let rawData = null;
 
@@ -1771,12 +1771,14 @@ export default function App() {
           const docSnap = await getDoc(docRef);
           if (docSnap.exists()) {
             rawData = docSnap.data().compressedData;
+            console.log("Cloud portfolio loaded:", sharedId);
           } else {
-            alert("Shared portfolio not found. It may have expired or the link is incorrect.");
+            console.error("Cloud document not found");
+            alert("This shared link has expired or no longer exists.");
           }
         } catch (error) {
-          console.error("Error loading shared portfolio:", error);
-          alert("Failed to load shared portfolio from cloud.");
+          console.error("Cloud storage access error:", error);
+          alert("Unable to reach cloud servers. Please check your internet connection.");
         } finally {
           setIsLoadingShared(false);
         }
@@ -2116,25 +2118,32 @@ export default function App() {
     
     try {
       if (isTooLargeForFirestore) {
-        throw new Error("Portfolio data is too large for cloud sync (Limit: 1MB). Falling back to URL parameters.");
+        throw new Error("Data exceeds Cloud Sync limits (1MB). Attempting URL-based share...");
       }
 
-      // Create a unique ID for this share (10 characters, alphanumeric)
-      const shareId = Array.from({length: 10}, () => Math.random().toString(36)[2]).join('').toUpperCase();
+      // Create a super short unique ID for this share (6 characters, alphanumeric)
+      const shareId = Array.from({length: 6}, () => Math.random().toString(36)[2]).join('').toUpperCase();
       
-      // Save to Firestore
-      await setDoc(doc(db, 'portfolios', shareId), {
+      // Save to Firestore with a timeout
+      const savePromise = setDoc(doc(db, 'portfolios', shareId), {
         compressedData: compressed,
         createdAt: serverTimestamp()
       });
+
+      // Wrap in a timeout for better UX
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error("Cloud sync timed out.")), 10000)
+      );
+
+      await Promise.race([savePromise, timeoutPromise]);
       
-      const url = `${window.location.origin}${window.location.pathname}?id=${shareId}`;
+      const url = `${window.location.origin}${window.location.pathname}?p=${shareId}`;
       setShareUrl(url);
       setIsUrlTooLarge(false);
     } catch (error) {
-      console.warn("Firestore Share Note:", error);
+      console.warn("Cloud Sync Fallback:", error);
       // Fallback to URL-based share if Firestore fails or data is too large
-      const tooLarge = compressed.length > 8000;
+      const tooLarge = compressed.length > 2000; // Lower threshold to warn user
       setIsUrlTooLarge(tooLarge || isTooLargeForFirestore);
       const url = `${window.location.origin}${window.location.pathname}?data=${compressed}`;
       setShareUrl(url);
