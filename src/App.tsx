@@ -1777,10 +1777,15 @@ export default function App() {
             console.error("Cloud document not found");
             alert("This shared link has expired or no longer exists.");
           }
-        } catch (error) {
+        } catch (error: any) {
           console.error("Cloud storage access error:", error);
-          // Only alert if we're not in a weird environment
-          if (window.location.hostname !== 'localhost') {
+          
+          // Check for common blocking issues (Brave Shields, Adblockers)
+          const isBlocked = error?.message?.includes('network') || error?.message?.includes('permission') || error?.code === 'unavailable';
+          
+          if (isBlocked) {
+            alert("Connection to Cloud was blocked. If you are using Brave, please try disabling 'Shields' for this site, or check your adblocker settings.");
+          } else if (window.location.hostname !== 'localhost') {
             alert("Unable to reach cloud servers. Please check your internet connection.");
           }
         } finally {
