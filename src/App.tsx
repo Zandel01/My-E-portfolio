@@ -1766,97 +1766,131 @@ export default function App() {
 
       if (sharedId) {
         setIsLoadingShared(true);
+        console.log("Attempting to load from Cloud ID:", sharedId);
         try {
           const docRef = doc(db, 'portfolios', sharedId);
           const docSnap = await getDoc(docRef);
           if (docSnap.exists()) {
             rawData = docSnap.data().compressedData;
-            console.log("Cloud portfolio loaded:", sharedId);
+            console.log("Cloud portfolio data retrieved. Length:", rawData?.length || 0);
           } else {
             console.error("Cloud document not found");
             alert("This shared link has expired or no longer exists.");
           }
         } catch (error) {
           console.error("Cloud storage access error:", error);
-          alert("Unable to reach cloud servers. Please check your internet connection.");
+          // Only alert if we're not in a weird environment
+          if (window.location.hostname !== 'localhost') {
+            alert("Unable to reach cloud servers. Please check your internet connection.");
+          }
         } finally {
           setIsLoadingShared(false);
         }
       } else if (sharedData) {
+        console.log("Attempting to load from URL Data. Length:", sharedData.length);
         rawData = sharedData;
       }
 
       if (rawData) {
         try {
           const decompressed = LZString.decompressFromEncodedURIComponent(rawData);
-          if (decompressed) {
-            const parsed = JSON.parse(decompressed);
-            
-            if (parsed) {
-              const sanitizeStrings = (obj: any, defaults: any) => {
-                const res = { ...obj };
-                Object.keys(defaults).forEach(key => {
-                  if (typeof defaults[key] === 'string' && typeof res[key] === 'object') {
-                    res[key] = defaults[key];
-                  }
-                });
-                return res;
-              };
-
-              if (parsed.titlePage) { 
-                const data = sanitizeStrings(parsed.titlePage, DEFAULT_TITLE_DATA);
-                setTitlePageData(data); setEditingData(data); 
-              }
-              if (parsed.coverPage) { 
-                const data = sanitizeStrings(parsed.coverPage, DEFAULT_COVER_DATA);
-                setCoverPageData(data); setEditingCoverData(data); 
-              }
-              if (parsed.academicCover) { 
-                const data = sanitizeStrings(parsed.academicCover, DEFAULT_ACADEMIC_COVER);
-                setAcademicCoverData(data); setEditingAcademicCoverData(data); 
-              }
-              if (parsed.acknowledgement) { 
-                const data = sanitizeStrings(parsed.acknowledgement, DEFAULT_ACKNOWLEDGEMENT);
-                setAcknowledgement(data); setEditingAcknowledgement(data); 
-              }
-              if (parsed.dedication) { 
-                const data = sanitizeStrings(parsed.dedication, DEFAULT_DEDICATION);
-                setDedication(data); setEditingDedication(data); 
-              }
-              if (parsed.philosophy) { setPhilosophy(parsed.philosophy); setEditingPhilosophy(parsed.philosophy); }
-              if (parsed.cv) { setCV(parsed.cv); setEditingCV(parsed.cv); }
-              if (parsed.achievements) { setAchievements(parsed.achievements); setEditingAchievements(parsed.achievements); }
-              if (parsed.seminars) { setSeminars(parsed.seminars); setEditingSeminars(parsed.seminars); }
-              if (parsed.deptBackground) { setDeptBackground(parsed.deptBackground); setEditingDeptBackground(parsed.deptBackground); }
-              if (parsed.teachers) { setTeachers(parsed.teachers); setEditingTeachers(parsed.teachers); }
-              if (parsed.inclusions) { setInclusions(parsed.inclusions); setEditingInclusions(parsed.inclusions); }
-              if (parsed.appendices) { setAppendices(parsed.appendices); setEditingAppendices(parsed.appendices); }
-              if (parsed.premises) { setPremises(parsed.premises); setEditingPremises(parsed.premises); }
-              if (parsed.logo) { setLogo(parsed.logo); setEditingLogo(parsed.logo); }
-              if (parsed.introHistory) { setIntroHistory(parsed.introHistory); setEditingIntroHistory(parsed.introHistory); }
-              if (parsed.missionVision) { setMissionVision(parsed.missionVision); setEditingMissionVision(parsed.missionVision); }
-              if (parsed.orgStructure) { setOrgStructure(parsed.orgStructure); setEditingOrgStructure(parsed.orgStructure); }
-              if (parsed.subjectsTaught) { setSubjectsTaught(parsed.subjectsTaught); setEditingSubjectsTaught(parsed.subjectsTaught); }
-              if (parsed.messageTeachers) { setMessageTeachers(parsed.messageTeachers); setEditingMessageTeachers(parsed.messageTeachers); }
-              if (parsed.quizzes) { setQuizzes(parsed.quizzes); setEditingQuizzes(parsed.quizzes); }
-              if (parsed.activities) { setActivities(parsed.activities); setEditingActivities(parsed.activities); }
-              if (parsed.lessonPlan) { setLessonPlan(parsed.lessonPlan); setEditingLessonPlan(parsed.lessonPlan); }
-              if (parsed.instructionalMaterials) { setInstructionalMaterials(parsed.instructionalMaterials); setEditingInstructionalMaterials(parsed.instructionalMaterials); }
-              if (parsed.extracurricular) { setExtracurricular(parsed.extracurricular); setEditingExtracurricular(parsed.extracurricular); }
-              if (parsed.evidence) { setEvidence(parsed.evidence); setEditingEvidence(parsed.evidence); }
-    
-              if (parsed.appSettings) {
-                setAppSettings(parsed.appSettings);
-                setEditingAppSettings(parsed.appSettings);
-              }
-
-              // Clear URL parameter so refreshing doesn't keep loading old shared data if they edit later
-              window.history.replaceState({}, document.title, window.location.pathname);
-              return true;
+          if (!decompressed) {
+            console.error("Decompression failed - data might be truncated or corrupt.");
+            if (sharedData && sharedData.length > 2000) {
+              alert("The link you followed is too long and was likely cut off by the browser. Please ask the sender for a shorter Cloud link.");
             }
+            return false;
+          }
+
+          const parsed = JSON.parse(decompressed);
+          
+          if (parsed) {
+            console.log("Portfolio data successfully parsed.");
+            const sanitizeStrings = (obj: any, defaults: any) => {
+              if (!obj) return defaults;
+              const res = { ...defaults, ...obj };
+              Object.keys(defaults).forEach(key => {
+                if (typeof defaults[key] === 'string' && typeof res[key] === 'object') {
+                  res[key] = defaults[key];
+                }
+              });
+              return res;
+            };
+
+            if (parsed.titlePage) { 
+              const data = sanitizeStrings(parsed.titlePage, DEFAULT_TITLE_DATA);
+              setTitlePageData(data); setEditingData(data); 
+            }
+            if (parsed.coverPage) { 
+              const data = sanitizeStrings(parsed.coverPage, DEFAULT_COVER_DATA);
+              setCoverPageData(data); setEditingCoverData(data); 
+            }
+            if (parsed.academicCover) { 
+              const data = sanitizeStrings(parsed.academicCover, DEFAULT_ACADEMIC_COVER);
+              setAcademicCoverData(data); setEditingAcademicCoverData(data); 
+            }
+            if (parsed.acknowledgement) { 
+              const data = sanitizeStrings(parsed.acknowledgement, DEFAULT_ACKNOWLEDGEMENT);
+              setAcknowledgement(data); setEditingAcknowledgement(data); 
+            }
+            if (parsed.dedication) { 
+              const data = sanitizeStrings(parsed.dedication, DEFAULT_DEDICATION);
+              setDedication(data); setEditingDedication(data); 
+            }
+            
+            // Generic handler for all other sections to avoid missing any
+            ['philosophy', 'cv', 'achievements', 'seminars', 'deptBackground', 'teachers', 'inclusions', 'appendices',
+             'premises', 'logo', 'introHistory', 'missionVision', 'orgStructure', 'subjectsTaught', 'messageTeachers', 
+             'quizzes', 'activities', 'lessonPlan', 'instructionalMaterials', 'extracurricular', 'evidence'].forEach(key => {
+              if (parsed[key]) {
+                const state = getSectionState(key as any);
+                if (state) {
+                  state[1](parsed[key]);
+                  state[3](parsed[key]);
+                } else {
+                  // Fallback for direct state setters if they exist
+                  if (key === 'philosophy') { setPhilosophy(parsed[key]); setEditingPhilosophy(parsed[key]); }
+                  else if (key === 'cv') { setCV(parsed[key]); setEditingCV(parsed[key]); }
+                  else if (key === 'achievements') { setAchievements(parsed[key]); setEditingAchievements(parsed[key]); }
+                  else if (key === 'seminars') { setSeminars(parsed[key]); setEditingSeminars(parsed[key]); }
+                  else if (key === 'deptBackground') { setDeptBackground(parsed[key]); setEditingDeptBackground(parsed[key]); }
+                  else if (key === 'teachers') { setTeachers(parsed[key]); setEditingTeachers(parsed[key]); }
+                  else if (key === 'inclusions') { setInclusions(parsed[key]); setEditingInclusions(parsed[key]); }
+                  else if (key === 'appendices') { setAppendices(parsed[key]); setEditingAppendices(parsed[key]); }
+                  else if (key === 'premises') { setPremises(parsed[key]); setEditingPremises(parsed[key]); }
+                  else if (key === 'logo') { setLogo(parsed[key]); setEditingLogo(parsed[key]); }
+                  else if (key === 'introHistory') { setIntroHistory(parsed[key]); setEditingIntroHistory(parsed[key]); }
+                  else if (key === 'missionVision') { setMissionVision(parsed[key]); setEditingMissionVision(parsed[key]); }
+                  else if (key === 'orgStructure') { setOrgStructure(parsed[key]); setEditingOrgStructure(parsed[key]); }
+                  else if (key === 'subjectsTaught') { setSubjectsTaught(parsed[key]); setEditingSubjectsTaught(parsed[key]); }
+                  else if (key === 'messageTeachers') { setMessageTeachers(parsed[key]); setMessageTeachers(parsed[key]); } // Typo check in editing might be needed
+                }
+              }
+            });
+
+            // Extra safety for remaining ones
+            if (parsed.messageTeachers) { setMessageTeachers(parsed.messageTeachers); setEditingMessageTeachers(parsed.messageTeachers); }
+            if (parsed.quizzes) { setQuizzes(parsed.quizzes); setEditingQuizzes(parsed.quizzes); }
+            if (parsed.activities) { setActivities(parsed.activities); setEditingActivities(parsed.activities); }
+            if (parsed.lessonPlan) { setLessonPlan(parsed.lessonPlan); setEditingLessonPlan(parsed.lessonPlan); }
+            if (parsed.instructionalMaterials) { setInstructionalMaterials(parsed.instructionalMaterials); setEditingInstructionalMaterials(parsed.instructionalMaterials); }
+            if (parsed.extracurricular) { setExtracurricular(parsed.extracurricular); setEditingExtracurricular(parsed.extracurricular); }
+            if (parsed.evidence) { setEvidence(parsed.evidence); setEditingEvidence(parsed.evidence); }
+  
+            if (parsed.appSettings) {
+              setAppSettings(parsed.appSettings);
+              setEditingAppSettings(parsed.appSettings);
+            }
+
+            // Clear URL parameter so refreshing doesn't keep loading old shared data if they edit later
+            if (sharedId || sharedData) {
+              window.history.replaceState({}, document.title, window.location.pathname);
+            }
+            return true;
           }
         } catch (e) {
           console.error("Failed to load/parse data", e);
+          alert("Error: The shared data is malformed or corrupted.");
         }
       }
       return false;
@@ -2121,32 +2155,40 @@ export default function App() {
         throw new Error("Data exceeds Cloud Sync limits (1MB). Attempting URL-based share...");
       }
 
-      // Create a super short unique ID for this share (6 characters, alphanumeric)
-      const shareId = Array.from({length: 6}, () => Math.random().toString(36)[2]).join('').toUpperCase();
+      // Create a super short unique ID for this share (8 characters, alphanumeric)
+      const shareId = Array.from({length: 8}, () => Math.random().toString(36)[2]).join('').toUpperCase();
       
       // Save to Firestore with a timeout
       const savePromise = setDoc(doc(db, 'portfolios', shareId), {
         compressedData: compressed,
-        createdAt: serverTimestamp()
+        createdAt: serverTimestamp(),
+        v: 3 // Version tracker
       });
 
       // Wrap in a timeout for better UX
       const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error("Cloud sync timed out.")), 10000)
+        setTimeout(() => reject(new Error("Cloud sync timed out.")), 15000)
       );
 
       await Promise.race([savePromise, timeoutPromise]);
       
+      // Use 'p' as the short parameter
       const url = `${window.location.origin}${window.location.pathname}?p=${shareId}`;
       setShareUrl(url);
       setIsUrlTooLarge(false);
-    } catch (error) {
+    } catch (error: any) {
       console.warn("Cloud Sync Fallback:", error);
-      // Fallback to URL-based share if Firestore fails or data is too large
-      const tooLarge = compressed.length > 2000; // Lower threshold to warn user
+      
+      // If the URL is extremely long, we should WARN them that it might fail on some browsers
+      const tooLarge = compressed.length > 1800; // Browsers typically limit to 2KB
       setIsUrlTooLarge(tooLarge || isTooLargeForFirestore);
+      
       const url = `${window.location.origin}${window.location.pathname}?data=${compressed}`;
       setShareUrl(url);
+
+      if (tooLarge) {
+        console.error("Critical: Share link is over browser limits. Friends may see errors.");
+      }
     }
     
     setHasCopied(false); 
@@ -3924,18 +3966,23 @@ export default function App() {
                         </div>
                       </div>
 
-                      {isUrlTooLarge && (
-                        <motion.div 
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          className="px-6 py-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl flex items-center gap-4"
-                        >
-                          <Lock size={16} className="text-amber-500 shrink-0" />
-                          <p className="text-[10px] text-amber-500/80 leading-snug font-black uppercase tracking-widest">
-                            Heuristic Warning: Large Artifact Size. Reliability may vary on slower networks.
-                          </p>
-                        </motion.div>
-                      )}
+                        {isUrlTooLarge && (
+                          <motion.div 
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="px-6 py-4 bg-red-500/10 border border-red-500/20 rounded-2xl flex items-center gap-4"
+                          >
+                            <Lock size={16} className="text-red-500 shrink-0" />
+                            <div className="space-y-1">
+                              <p className="text-[10px] text-red-500 leading-snug font-black uppercase tracking-widest">
+                                CRITICAL: Link too long for some browsers
+                              </p>
+                              <p className="text-[9px] text-red-500/70 lowercase tracking-normal">
+                                Cloud sync failed & URL exceeds 2KB. Friends might see "I/O errors".
+                              </p>
+                            </div>
+                          </motion.div>
+                        )}
                    </div>
 
                    <div className="space-y-6">
