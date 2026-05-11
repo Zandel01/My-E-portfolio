@@ -55,7 +55,9 @@ const DEFAULT_SETTINGS: AppSettings = {
   fontFamily: 'Inter',
   textColor: '#000000',
   bgOpacity: 100,
-  imgbbKey: 'a51150c02add7feb271f1e50b63c598b'
+  imgbbKey: 'a51150c02add7feb271f1e50b63c598b',
+  loaderName: '',
+  loaderTagline: 'PORTFOLIO'
 };
 
 const uploadToImgBB = async (file: File, key: string) => {
@@ -1478,7 +1480,7 @@ function SortableBlock({ block, editMode, onUpdate, onRemove, onDuplicate, imgbb
   );
 }
 
-const LoadingScreen = ({ onComplete, name }: { onComplete: () => void; name: string; key?: string }) => {
+const LoadingScreen = ({ onComplete, name, tagline }: { onComplete: () => void; name: string; tagline?: string; key?: string }) => {
   const [progress, setProgress] = useState(0);
 
   useEffect(() => {
@@ -1531,7 +1533,7 @@ const LoadingScreen = ({ onComplete, name }: { onComplete: () => void; name: str
           delay: 0.2
         } 
       }}
-      className="fixed inset-0 z-[5000] bg-[#050505] flex flex-col items-center justify-center p-6 text-white overflow-hidden"
+      className="fixed inset-0 z-[15000] bg-[#050505] flex flex-col items-center justify-center p-6 text-white overflow-hidden"
     >
       <div className="absolute inset-0 opacity-[0.05] pointer-events-none" style={{ 
         backgroundImage: 'radial-gradient(circle at 2px 2px, white 0.5px, transparent 0)',
@@ -1549,7 +1551,7 @@ const LoadingScreen = ({ onComplete, name }: { onComplete: () => void; name: str
             variants={itemVariants}
             className="text-xs sm:text-sm font-black uppercase tracking-[1em] text-white/40 block ml-[1em]"
           >
-            PORTFOLIO
+            {tagline || 'PORTFOLIO'}
           </motion.span>
           <motion.h1 
             variants={itemVariants}
@@ -1708,13 +1710,20 @@ export default function App() {
   const [isUrlTooLarge, setIsUrlTooLarge] = useState(false);
   const [isLoadingShared, setIsLoadingShared] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
-  const [showDashboard, setShowDashboard] = useState(true);
+  const [isSharedView, setIsSharedView] = useState(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    return !!(urlParams.get('data') || urlParams.get('id') || urlParams.get('p'));
+  });
+  const [showDashboard, setShowDashboard] = useState(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const isShared = !!(urlParams.get('data') || urlParams.get('id') || urlParams.get('p'));
+    return !isShared;
+  });
   const [portfolios, setPortfolios] = useState<PortfolioSnapshot[]>([]);
   const [currentPortfolioId, setCurrentPortfolioId] = useState<string | null>(null);
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renamingValue, setRenamingValue] = useState('');
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [isSharedView, setIsSharedView] = useState(false);
   const [showStatusIcons, setShowStatusIcons] = useState(() => {
     const saved = localStorage.getItem('portfolio_show_status');
     return saved !== null ? JSON.parse(saved) : true;
@@ -2919,6 +2928,33 @@ export default function App() {
           </div>
         </div>
 
+        {/* Loader Screen Config */}
+        <div className="flex flex-col gap-4 p-6 bg-neutral-50 rounded-3xl border border-neutral-100">
+          <span className="text-[10px] font-black uppercase tracking-[0.3em] text-neutral-400">Loading Screen</span>
+          <div className="space-y-4">
+            <div className="flex flex-col gap-1.5">
+              <span className="text-[8px] font-black uppercase text-neutral-300 tracking-widest pl-1">Primary Name</span>
+              <input 
+                type="text" 
+                placeholder={coverPageData.heroName || "Display Name"}
+                value={editingAppSettings.loaderName || ''}
+                onChange={(e) => setEditingAppSettings(prev => ({ ...prev, loaderName: e.target.value }))}
+                className="w-full bg-white border border-neutral-200 rounded-xl px-4 py-2.5 text-xs font-bold outline-none focus:border-black transition-all"
+              />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <span className="text-[8px] font-black uppercase text-neutral-300 tracking-widest pl-1">Tagline / Label</span>
+              <input 
+                type="text" 
+                placeholder="PORTFOLIO"
+                value={editingAppSettings.loaderTagline || ''}
+                onChange={(e) => setEditingAppSettings(prev => ({ ...prev, loaderTagline: e.target.value }))}
+                className="w-full bg-white border border-neutral-200 rounded-xl px-4 py-2.5 text-xs font-bold outline-none focus:border-black transition-all"
+              />
+            </div>
+          </div>
+        </div>
+
         {/* Share & Publish Section */}
         <div className="flex flex-col gap-4 mt-4 pt-8 border-t border-neutral-100">
           <span className="text-[10px] font-black uppercase tracking-[0.3em] text-amber-500">Cloud Distribution</span>
@@ -3255,7 +3291,7 @@ export default function App() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[9999] bg-white/90 backdrop-blur-xl flex flex-col items-center justify-center space-y-8"
+            className="fixed inset-0 z-[16000] bg-white/90 backdrop-blur-xl flex flex-col items-center justify-center space-y-8"
           >
             <div className="relative">
               <div className="w-24 h-24 border-4 border-neutral-100 rounded-full animate-pulse" />
@@ -3270,7 +3306,8 @@ export default function App() {
         {isLoading ? (
           <LoadingScreen 
             key="loader"
-            name={coverPageData.heroName || 'Zandel Ragay'} 
+            name={appSettings.loaderName || coverPageData.heroName || 'Zandel Ragay'} 
+            tagline={appSettings.loaderTagline || 'PORTFOLIO'}
             onComplete={() => setIsLoading(false)} 
           />
         ) : (

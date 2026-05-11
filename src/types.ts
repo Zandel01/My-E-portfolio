@@ -125,6 +125,8 @@ export interface AppSettings {
   textColor: string;
   bgOpacity: number;
   imgbbKey?: string;
+  loaderName?: string;
+  loaderTagline?: string;
 }
 
 export const SECTIONS: Section[] = [
